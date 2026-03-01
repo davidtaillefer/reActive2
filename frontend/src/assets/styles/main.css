@@ -1,0 +1,16 @@
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+.app-wrapper {
+  height: 100vh;
+}
+
+
+#map {
+  height: 100%;
+  width: 100%;
+}
