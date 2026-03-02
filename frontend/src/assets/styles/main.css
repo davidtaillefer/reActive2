@@ -14,3 +14,7 @@ body,
   height: 100%;
   width: 100%;
 }
+
+.text-purple {
+  color: #8e44ad !important;
+}
