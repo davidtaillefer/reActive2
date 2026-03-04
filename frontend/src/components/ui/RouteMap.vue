@@ -1,5 +1,5 @@
 <template>
-  <div class="card mb-4 col-sm-8">
+  <div class="card">
     <div class="card-body">
       <div ref="mapContainer" class="map"></div>
     </div>
@@ -7,59 +7,58 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { onMounted, ref } from 'vue'
+//import { computed } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+//import { watch, watchEffect } from 'vue'
 
-const mapContainer = ref(null)
-
-const props = defineProps({
-  hrmData: {
-    type: Object,
-    required: true,
-  },
-})
+const props = defineProps(['hrmData']);
+const mapContainer = ref(null);
+let map = null;
+let polylineLayer = null;
+let polylineLayers = []
+let allBounds = L.latLngBounds();
 
 onMounted(() => {
-  if (!mapContainer.value) return
-
-  // Process HRM data to extract GPS points
- const hrmData = props.hrmData || {};
-const trackpoints = hrmData?.Activities?.Track || {};
-hrmData.routeCoordinates = [];
-
-Object.keys(trackpoints).forEach(function(key, j) {
-  const trackpoint = trackpoints[key];
-
-  if (trackpoint.position_lat && trackpoint.position_long) {
-    hrmData.routeCoordinates.push([
-      parseFloat(trackpoint.position_lat),
-      parseFloat(trackpoint.position_long)
-    ]);
-  }
-  else if (j === 0 && hrmData.start_position_lat && hrmData.start_position_long) {
-    hrmData.routeCoordinates.push([
-      parseFloat(hrmData.start_position_lat),
-      parseFloat(hrmData.start_position_long)
-    ]);
-  }
+  map = L.map(mapContainer.value);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
 });
 
-if (Array.isArray(hrmData.routeCoordinates) && hrmData.routeCoordinates.length > 0) {
+  watch(() => props.hrmData, (newVal) => {
+    const rawTrack = newVal?.[newVal.length - 1]?.Activities?.Track;
 
-  const map = L.map(mapContainer.value).setView([45.4, -75.7], 13)
+    if (rawTrack) {
+      const trackArray = Array.isArray(rawTrack) 
+        ? rawTrack 
+        : Object.values(rawTrack);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 19,
-  }).addTo(map)
+      const validPoints = trackArray.filter(p => 
+        p && 
+        p.position_lat != null && 
+        p.position_long != null
+      );
 
-  var polyline = L.polyline(hrmData.routeCoordinates, {color: 'red'});
-  polyline.addTo(map);
-	map.fitBounds(polyline.getBounds());
-}
-})
+      const latlngs = validPoints.map(p => [
+        Number(p.position_lat), 
+        Number(p.position_long)
+      ]);
+
+      if (map && latlngs.length >= 2) {
+        
+        polylineLayer = L.polyline(latlngs, { color: 'red', weight: 3 }).addTo(map);
+
+        polylineLayers.push(polylineLayer);
+      
+        allBounds.extend(polylineLayer.getBounds());
+      }
+    }
+    if (polylineLayers.length > 0) {
+    map.fitBounds(allBounds, { padding: [20, 20] });
+    }
+  }, { immediate: true, deep: true });
 </script>
 
 <style>

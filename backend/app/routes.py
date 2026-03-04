@@ -134,15 +134,13 @@ def uploadhrm():
 @main_bp.route('/activities')
 def activities():
     try:
+        sport = request.args.get('sport')
         startdate = request.args.get('start')
         enddate = request.args.get('end')
         conn = exdb.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        # cursor = exdb.get_db().cursor() 
-        print(startdate, enddate)
-        sql = "SELECT * FROM activities WHERE date BETWEEN %s and %s"
-        data = (startdate, enddate)
-        #sql = "SHOW TABLES"
+        sql = "SELECT * FROM activities WHERE (%s IS NULL OR sport = %s) AND date BETWEEN %s and %s"
+        data = (sport, sport, startdate, enddate)
         cursor.execute(sql, data)
         activities = cursor.fetchall()
         print(activities)
@@ -840,16 +838,16 @@ def not_found(error=None):
 
     return res
         
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    app.secret_key = 'super secret key'
-    app.config['SESSION_TYPE'] = 'filesystem'
+#     app.secret_key = 'super secret key'
+#     app.config['SESSION_TYPE'] = 'filesystem'
 
-    #sess.init_app(app)
+#     #sess.init_app(app)
 
-    app.debug = True
+#     app.debug = True
     
-    app.run(host='0.0.0.0', port=5010)  
+#     app.run(host='0.0.0.0', port=5010)  
 
 def allowed_file(filename):
     return '.' in filename and \

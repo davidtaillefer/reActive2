@@ -59,102 +59,13 @@
 
             <!-- Right Side - Map -->
             <BCol cols="12" md="8" lg="9">
-              <BCard class="h-100">
                 <BCardBody class="p-0 position-relative">
-                  <!-- Map Placeholder -->
-                  <div 
-                    class="w-100 h-100 d-flex align-items-center justify-content-center position-relative"
-                    style="min-height: 500px; background: linear-gradient(135deg, #e7f1ff 0%, #d1f4e0 100%)"
-                  >
-                    <!-- Grid overlay -->
-                    <div 
-                      class="position-absolute top-0 start-0 w-100 h-100"
-                      :style="gridStyle"
-                    ></div>
-
-                    <!-- Map content -->
-                    <svg viewBox="0 0 800 600" class="w-100 h-100" style="max-height: 100%">
-                      <!-- Road lines -->
-                      <path
-                        d="M 0 300 Q 200 280, 400 300 T 800 300"
-                        stroke="#94a3b8"
-                        stroke-width="3"
-                        fill="none"
-                        opacity="0.4"
-                      />
-                      <path
-                        d="M 0 200 Q 200 180, 400 200 T 800 200"
-                        stroke="#94a3b8"
-                        stroke-width="3"
-                        fill="none"
-                        opacity="0.4"
-                      />
-                      <path
-                        d="M 0 400 Q 200 420, 400 400 T 800 400"
-                        stroke="#94a3b8"
-                        stroke-width="3"
-                        fill="none"
-                        opacity="0.4"
-                      />
-
-                      <!-- Season markers -->
-                      <g v-for="(location, index) in mapLocations" :key="location.season">
-                        <circle
-                          :cx="150 + index * 160"
-                          :cy="200 + (index % 2) * 150"
-                          r="30"
-                          :fill="getSeasonColors(location.season).bg"
-                          opacity="0.5"
-                        />
-                        <circle
-                          :cx="150 + index * 160"
-                          :cy="200 + (index % 2) * 150"
-                          r="18"
-                          :fill="getSeasonColors(location.season).border"
-                          opacity="0.8"
-                        />
-                        <circle
-                          :cx="150 + index * 160"
-                          :cy="200 + (index % 2) * 150"
-                          r="10"
-                          :fill="getSeasonColors(location.season).text"
-                        />
-                        <text
-                          :x="150 + index * 160"
-                          :y="200 + (index % 2) * 150 - 40"
-                          text-anchor="middle"
-                          font-size="14"
-                          font-weight="600"
-                          :fill="getSeasonColors(location.season).text"
-                        >
-                          {{ location.season }}
-                        </text>
-                      </g>
-                    </svg>
-
-                    <!-- Map legend -->
-                    <div class="position-absolute bottom-0 start-0 m-3 bg-white rounded shadow-sm p-3">
-                      <div class="small fw-semibold mb-2">Seasonal Activity Locations</div>
-                      <div v-for="season in seasonData" :key="season.season" class="d-flex align-items-center gap-2 mb-1">
-                        <div 
-                          :style="{
-                            width: '16px',
-                            height: '16px',
-                            borderRadius: '50%',
-                            backgroundColor: seasonColors[season.color].text,
-                          }"
-                        ></div>
-                        <span class="small">{{ season.season }}</span>
-                      </div>
-                    </div>
-
-                    <!-- Coordinates display -->
-                    <div class="position-absolute top-0 end-0 m-3 bg-white rounded shadow-sm p-2">
-                      <small class="text-muted">San Francisco Bay Area</small>
-                    </div>
-                  </div>
+                  <RouteMap
+                    v-if="hrmData"
+                    :hrmData="hrmData"
+                    class="flex-fill"
+                  />
                 </BCardBody>
-              </BCard>
             </BCol>
           </BRow>
         </BCardBody>
@@ -164,8 +75,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue'
 import { BContainer, BCard, BCardBody, BRow, BCol, BFormSelect } from 'bootstrap-vue-next';
+import RouteMap from '@/components/ui/RouteMap.vue'
+
+const activities = ref([])
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+const hrmData = ref([])
+const startDate = ref('2025-12-01')
+const endDate = ref('2026-08-31')
+const hrmfile = ref('') 
 
 const seasonData = [
   {
@@ -209,26 +128,6 @@ const seasonColors = {
   amber: { bg: '#fff3cd', border: '#ffe69c', text: '#997404' },
 };
 
-const mapLocations = [
-  { lat: 37.7749, lng: -122.4194, season: 'Winter' },
-  { lat: 37.8044, lng: -122.2712, season: 'Spring' },
-  { lat: 37.7280, lng: -122.4865, season: 'Summer' },
-  { lat: 37.8716, lng: -122.2727, season: 'Fall' },
-];
-
-const gridStyle = {
-  backgroundImage: `
-    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px)
-  `,
-  backgroundSize: '40px 40px',
-  pointerEvents: 'none',
-};
-
-const getSeasonColors = (seasonName: string) => {
-  const season = seasonData.find(s => s.season === seasonName);
-  return season ? seasonColors[season.color] : seasonColors.blue;
-};
 
 const selectedYear = ref('2025-2026');
 const yearOptions = [
@@ -236,4 +135,38 @@ const yearOptions = [
   { value: '2024-2025', text: 'Year 2024-2025' },
   { value: '2023-2024', text: 'Year 2023-2024' },
 ];
+
+// Load activities
+async function loadActivities() {
+  const res = await fetch(
+    `${apiBaseUrl}activities?sport=5&start=${startDate.value}&end=${endDate.value}`
+  )
+  activities.value = await res.json()
+}
+
+onMounted(async () => {
+  
+  await loadActivities()
+  console.log('Loaded activities:', activities.value) 
+
+for (const activity of activities.value) {
+    hrmfile.value = activity.hrmfile || ''
+    if (!hrmfile.value) {
+      console.warn('No HRM file for activity:', activity)
+      continue
+    }
+    try {
+      const res = await fetch(apiBaseUrl + `hrm3/${hrmfile.value}`)
+      if (res.ok) {
+        const data = await res.json()
+        //hrmData.value.push(data)
+        hrmData.value = [...hrmData.value, data];
+      } else {
+        console.error('failed to fetch HRM data', res.status)
+      }
+    } catch (err) {
+      console.error('error fetching HRM data', err)
+    }
+  }
+})
 </script>

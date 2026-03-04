@@ -61,7 +61,7 @@ const id = route.params.id
 const activity = ref(route.state?.activity || {})
 const iconUrl = ref('')
 const sportName = ref('')
-const hrmData = ref('')
+const hrmData = ref([]) // Initialize as an array to hold multiple HRM datasets if needed
 const hrmfile = ref(activity.value.hrmfile || '')
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
@@ -106,7 +106,8 @@ onMounted(async () => {
     try {
       const res = await fetch(apiBaseUrl + `hrm3/${hrmfile.value}`)
       if (res.ok) {
-        hrmData.value = await res.json()
+        const data = await res.json()
+        hrmData.value.push(data)
       } else {
         console.error('failed to fetch HRM data', res.status)
       }
