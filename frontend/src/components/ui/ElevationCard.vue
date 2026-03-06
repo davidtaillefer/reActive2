@@ -1,10 +1,10 @@
 <template>
   <MetricCard 
-    title="Heart Rate" 
+    title="Elevation" 
     :value1="value1" 
-    unit1="avg bpm" 
+    unit1="metres" 
     :value2="value2"
-    unit2="max bpm"
+    unit2="max metres"
     icon="heart-fill" 
     icon-color="text-danger"
   >
@@ -27,8 +27,8 @@ const props = defineProps({
   },
   hrmData: {type: Array, required: true},
 });
-const value1 = ref(props.activity?.heartrate.toFixed(0) || 'N/A');
-const value2 = ref(props.hrmData?.[0]?.Activities?.max_heart_rate?.toFixed(0)  || 'N/A');
+const value1 = ref(props.activity?.ascent.toFixed(0) || 'N/A');
+const value2 = ref(props.hrmData?.[0]?.Activities?.max_elevation?.toFixed(0) || 'N/A');
 
 const chartData = computed(() => {
   const trackData = props.hrmData?.[0]?.Activities?.Track 
@@ -43,10 +43,10 @@ const chartData = computed(() => {
     }),
     datasets: [
       {
-        label: 'Heart Rate',
-        data: trackData.map(d => d.heart_rate),
-        borderColor: '#dc3545',
-        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+        label: 'Elevation',
+        data: trackData.map(d => d.enhanced_altitude || 0),
+        borderColor: 'green',
+        backgroundColor: 'rgba(0, 254, 69, 0.1)',
         tension: 0.4,
         pointRadius: 0,
         fill: true,
@@ -83,7 +83,6 @@ const chartOptions = {
     },
     y: {
       display: true,
-      min: 80,
     },
   },
 };

@@ -1,50 +1,59 @@
 <template>
-  <MetricCard
-    title="Cadence"
-    value="85"
-    unit="avg rpm"
-    icon="arrow-repeat"
-    icon-color="text-purple"
+  <MetricCard 
+    title="Cadence" 
+    :value1="value1" 
+    unit1="rpm" 
+    :value2="value2"
+    unit2="max rpm"
+    icon="heart-fill" 
+    icon-color="text-danger"
   >
-    <Bar :data="chartData" :options="chartOptions" />
+    <Line :data="chartData" :options="chartOptions" />
   </MetricCard>
 </template>
 
 <script setup lang="ts">
-import { Bar } from 'vue-chartjs';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { ref, computed} from 'vue'
+import { Line } from 'vue-chartjs';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import MetricCard from './MetricCard.vue';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const cadenceData = [
-  { time: 0, rpm: 75 },
-  { time: 5, rpm: 78 },
-  { time: 10, rpm: 82 },
-  { time: 15, rpm: 85 },
-  { time: 20, rpm: 88 },
-  { time: 25, rpm: 90 },
-  { time: 30, rpm: 92 },
-  { time: 35, rpm: 91 },
-  { time: 40, rpm: 89 },
-  { time: 45, rpm: 87 },
-  { time: 50, rpm: 85 },
-  { time: 55, rpm: 83 },
-  { time: 60, rpm: 81 },
-  { time: 65, rpm: 78 },
-  { time: 70, rpm: 72 },
-];
+const props = defineProps({
+  activity: {
+    type: Object,
+    required: true,
+  },
+  hrmData: {type: Array, required: true},
+});
+const value1 = ref(props.activity?.avgcadence?.toFixed(0) || 'N/A');
+const value2 = ref(props.hrmData?.[0]?.Activities?.max_cadence?.toFixed(0) || 'N/A');
 
-const chartData = {
-  labels: cadenceData.map(d => `${d.time} min`),
-  datasets: [
-    {
-      label: 'Cadence',
-      data: cadenceData.map(d => d.rpm),
-      backgroundColor: '#a855f7',
-    },
-  ],
-};
+const chartData = computed(() => {
+  const trackData = props.hrmData?.[0]?.Activities?.Track 
+    ? Object.values(props.hrmData[0].Activities.Track) 
+    : [];
+
+  const startTime = new Date(props.activity?.date).getTime();
+  return {
+    labels: trackData.map(d => {
+      const currentTime = new Date(d.timestamp).getTime();
+      return (currentTime - startTime) / 60000; // Convert ms to minutes
+    }),
+    datasets: [
+      {
+        label: 'Cadence',
+        data: trackData.map(d => d.cadence || 0),
+        borderColor: 'goldenrod',
+        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+        tension: 0.4,
+        pointRadius: 0,
+        fill: true,
+      },
+    ],
+  };
+});
 
 const chartOptions = {
   responsive: true,
@@ -55,25 +64,27 @@ const chartOptions = {
     },
     tooltip: {
       callbacks: {
-        label: (context: any) => `${context.parsed.y} rpm`,
+        label: (context: any) => `${context.parsed.y} bpm`,
       },
     },
   },
   scales: {
     x: {
-      display: true,
+      type: 'linear', // Treat labels as numbers
+      beginAtZero: true,
+      ticks: {
+        stepSize: 10, // Force intervals of 10
+        callback: (value) => `${value}` // Append "min" to the label
+      },
+      title: {
+        display: true,
+        text: 'Duration (Minutes)'
+      }
     },
     y: {
       display: true,
-      min: 60,
-      max: 100,
     },
   },
 };
-</script>
 
-<style scoped>
-.text-purple {
-  color: #a855f7;
-}
-</style>
+</script>

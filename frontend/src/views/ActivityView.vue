@@ -33,10 +33,31 @@
 
       <!-- Metrics Section (1/3 width on lg+) -->
       <BCol lg="4" class="d-flex flex-column p-3 overflow-auto gap-3">
-        <HeartRateCard />
-        <SpeedCard />
-        <CadenceCard />
-        <PowerCard />
+        <HeartRateCard
+          v-if="activity && Object.keys(activity).length && hrmData"
+          :activity="activity"
+          :hrmData="hrmData"
+        />        
+        <SpeedCard 
+          v-if="activity && Object.keys(activity).length && hrmData"
+          :activity="activity"
+          :hrmData="hrmData"
+        />
+        <ElevationCard
+          v-if="activity && Object.keys(activity).length && hrmData"
+          :activity="activity"
+          :hrmData="hrmData"
+        />   
+        <CadenceCard 
+          v-if="activity && Object.keys(activity).length && hrmData"
+          :activity="activity"
+          :hrmData="hrmData"
+        />
+        <PowerCard
+          v-if="activity && Object.keys(activity).length && hrmData"
+          :activity="activity"
+          :hrmData="hrmData"
+        />
       </BCol>
 
     </BRow>
@@ -53,6 +74,7 @@ import ActivityDetails from '@/components/ui/ActivityDetails.vue'
 import RouteMap from '@/components/ui/RouteMap.vue'
 import HeartRateCard from '@/components/ui/HeartRateCard.vue'
 import SpeedCard from '@/components/ui/SpeedCard.vue'
+import ElevationCard from '@/components/ui/ElevationCard.vue'
 import CadenceCard from '@/components/ui/CadenceCard.vue'
 import PowerCard from '@/components/ui/PowerCard.vue'
 

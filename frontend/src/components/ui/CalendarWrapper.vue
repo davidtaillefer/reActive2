@@ -94,12 +94,12 @@ export default {
           let iconUrl = ''
           if (iconName) {
             try {
-              iconUrl = new URL(`../assets/icons/${iconName}`, import.meta.url).href
+              iconUrl = new URL(`../../assets/icons/${iconName}`, import.meta.url).href
             } catch {
               iconUrl = ''
             }
           }
-
+console.log('activity', a, 'icon', iconName, 'url', iconUrl)
           // build title and append distance if present
           let title = a.name || 'activity'
           if (a.distance && a.distance > 0) {

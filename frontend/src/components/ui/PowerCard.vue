@@ -1,53 +1,59 @@
 <template>
   <MetricCard 
     title="Power" 
-    value="198" 
-    unit="avg watts" 
-    icon="lightning-fill" 
-    icon-color="text-warning"
+    :value1="value1" 
+    unit1="watts" 
+    :value2="value2"
+    unit2="max watts"
+    icon="heart-fill" 
+    icon-color="text-danger"
   >
     <Line :data="chartData" :options="chartOptions" />
   </MetricCard>
 </template>
 
 <script setup lang="ts">
+import { ref, computed} from 'vue'
 import { Line } from 'vue-chartjs';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import MetricCard from './MetricCard.vue';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
-const powerData = [
-  { time: 0, watts: 145 },
-  { time: 5, watts: 165 },
-  { time: 10, watts: 185 },
-  { time: 15, watts: 205 },
-  { time: 20, watts: 225 },
-  { time: 25, watts: 235 },
-  { time: 30, watts: 220 },
-  { time: 35, watts: 210 },
-  { time: 40, watts: 195 },
-  { time: 45, watts: 185 },
-  { time: 50, watts: 200 },
-  { time: 55, watts: 215 },
-  { time: 60, watts: 205 },
-  { time: 65, watts: 180 },
-  { time: 70, watts: 155 },
-];
+const props = defineProps({
+  activity: {
+    type: Object,
+    required: true,
+  },
+  hrmData: {type: Array, required: true},
+});
+const value1 = ref(props.activity?.avgpower?.toFixed(0) || 'N/A');
+const value2 = ref(props.hrmData?.[0]?.Activities?.max_power?.toFixed(0)  || 'N/A');
 
-const chartData = {
-  labels: powerData.map(d => `${d.time} min`),
-  datasets: [
-    {
-      label: 'Power',
-      data: powerData.map(d => d.watts),
-      borderColor: '#ffc107',
-      backgroundColor: 'rgba(255, 193, 7, 0.1)',
-      tension: 0.4,
-      pointRadius: 0,
-    },
-  ],
-};
+const chartData = computed(() => {
+  const trackData = props.hrmData?.[0]?.Activities?.Track 
+    ? Object.values(props.hrmData[0].Activities.Track) 
+    : [];
+
+  const startTime = new Date(props.activity?.date).getTime();
+  return {
+    labels: trackData.map(d => {
+      const currentTime = new Date(d.timestamp).getTime();
+      return (currentTime - startTime) / 60000; // Convert ms to minutes
+    }),
+    datasets: [
+      {
+        label: 'Power',
+        data: trackData.map(d => d.power || 0),
+        borderColor: 'purple',
+        backgroundColor: 'rgba(128, 0, 128, 0.1)',
+        tension: 0.4,
+        pointRadius: 0,
+        fill: true,
+      },
+    ],
+  };
+});
 
 const chartOptions = {
   responsive: true,
@@ -58,19 +64,27 @@ const chartOptions = {
     },
     tooltip: {
       callbacks: {
-        label: (context: any) => `${context.parsed.y} W`,
+        label: (context: any) => `${context.parsed.y} bpm`,
       },
     },
   },
   scales: {
     x: {
-      display: false,
+      type: 'linear', // Treat labels as numbers
+      beginAtZero: true,
+      ticks: {
+        stepSize: 10, // Force intervals of 10
+        callback: (value) => `${value}` // Append "min" to the label
+      },
+      title: {
+        display: true,
+        text: 'Duration (Minutes)'
+      }
     },
     y: {
-      display: false,
-      min: 100,
-      max: 250,
+      display: true,
     },
   },
 };
+
 </script>

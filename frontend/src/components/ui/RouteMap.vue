@@ -28,6 +28,12 @@ onMounted(() => {
 });
 
   watch(() => props.hrmData, (newVal) => {
+
+    const trackData = newVal
+    const heartRateArray = Object.values(trackData).map(point => ({
+      timestamp: point.timestamp, // Ensure the exact key name matches your object
+      heart_rate: point.heart_rate // Adjust if the key is 'heartRate' or similar
+    }));
     const rawTrack = newVal?.[newVal.length - 1]?.Activities?.Track;
 
     if (rawTrack) {
