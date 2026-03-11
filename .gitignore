@@ -8,6 +8,7 @@ backend/venv
 backend/__pycache__
 backend/*.pyc
 backend/config.py
+backend/test_files/
 
 # OS
 .DS_Store

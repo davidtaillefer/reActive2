@@ -36,11 +36,13 @@ def uploadpicture():
             #filenum = f.filenum
             for key in file:
                 print(key)
-            print(file)
+            #print(file)
             if file.filename == '':
                 flash('No selected file')
+                print('No selected file')
                 return redirect(request.url)
             if file and allowed_file(file.filename):
+                print('File allowed')
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
                 return redirect(url_for('download_file', name=filename))
@@ -66,51 +68,36 @@ def uploadpicture():
 @main_bp.route('/uploadhrm2', methods=['POST'])
 def uploadhrm2():
     
-    UPLOAD_FOLDER = '/srv/md0/data/gps/fit'
-    ALLOWED_EXTENSIONS = {'fit', 'tcx'}
+    UPLOAD_FOLDER = '/home/david/Programming/reActive2/backend/test_files/fit'
+    ALLOWED_EXTENSIONS = {'fit', 'tcx', 'gpx'}
+    print('Request received for HRM upload')
     
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
     if 'file' not in request.files:
-        return 'No file part in the request', 400
+        return jsonify({'error': 'No file part in the request'}), 400    
     
     try:
-        #newrecord = request.get_json()
-        print(request.files['file'])
-        
-        for key, value in request:
-            print(f"{key}: {value}")
-        
         if request.method == 'POST':
-            #if 'file' not in request.files:
-            #    print('No file part')
-            #    return redirect(request.url)
-            #f = request.form['file']
             file = request.files['file']
-            #filenum = f.filenum
-            for key in file:
-                print(key)
-            print(file)
             if file.filename == '':
                 print('No selected file')
                 return redirect(request.url)
-            if file and allowed_file(file.filename):
+            if file and allowed_file(file.filename, ALLOWED_EXTENSIONS):
+                print('File allowed')
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
-                return redirect(url_for('download_file', name=filename))
-            #print(f.items())
-            #file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            #f.save(os.path.join('/srv/md0/www/recipes/pics', filenum))
-        
-        
-        return jsonify({
+                return jsonify({
                     'res': 'HRM File Sucessfully Uploaded.',
                     'status': '200',
+                    'filename': filename,
                     'msg': 'Success'
                 })
+            return jsonify({'error': 'File type not allowed'}), 400
         
     except Exception as e:
-        print(e)
-    finally:
-        print("HRM Upload Done!")
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
         
 @main_bp.route('/uploadhrm', methods=['POST'])
 def uploadhrm():
@@ -403,7 +390,7 @@ def createactivity():
 @main_bp.route('/hrm3/<hrmfile>')
 def readhrm3(hrmfile):
     file_name, file_extension = os.path.splitext(hrmfile)
-    base_path = '/home/david/Programming/reActive/backend/test_files/'
+    base_path = '/home/david/Programming/reActive2/backend/test_files/'
 
     
     if file_extension == '.tcx':
@@ -849,6 +836,7 @@ def not_found(error=None):
     
 #     app.run(host='0.0.0.0', port=5010)  
 
-def allowed_file(filename):
+def allowed_file(filename, allowed_extensions):
+    print('Checking if file is allowed')
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           filename.rsplit('.', 1)[1].lower() in allowed_extensions

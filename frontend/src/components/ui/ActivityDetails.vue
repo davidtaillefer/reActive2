@@ -12,7 +12,7 @@
 
         <!-- Sport Name & Date -->
         <BCol class="text-lg-start mb-2 mb-lg-0">
-          <div class="sport-name">{{ sportName }}</div>
+          <div class="sport-name">{{ sportName }} - {{ activity.name }}</div>
           <div class="date-text">{{ formattedDate }}</div>
         </BCol>
 

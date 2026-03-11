@@ -1,5 +1,9 @@
 <template>
-    <FullCalendar :options="calendarOptions" />
+  <div class="card">
+    <div class="card-body">  
+      <FullCalendar :options="calendarOptions" />
+    </div>
+  </div>
 </template>
 
 <script>
@@ -99,7 +103,7 @@ export default {
               iconUrl = ''
             }
           }
-console.log('activity', a, 'icon', iconName, 'url', iconUrl)
+
           // build title and append distance if present
           let title = a.name || 'activity'
           if (a.distance && a.distance > 0) {

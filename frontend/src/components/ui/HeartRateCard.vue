@@ -5,7 +5,7 @@
     unit1="avg bpm" 
     :value2="value2"
     unit2="max bpm"
-    icon="heart-fill" 
+    icon="i-bi-heart-fill" 
     icon-color="text-danger"
   >
     <Line :data="chartData" :options="chartOptions" />
@@ -17,6 +17,7 @@ import { ref, computed} from 'vue'
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import MetricCard from './MetricCard.vue';
+
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
