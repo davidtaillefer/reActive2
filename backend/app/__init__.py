@@ -11,5 +11,9 @@ def create_app():
 
     # Import the Blueprint from routes.py and register it
     from .routes import main_bp
+    from .activities import activities_bp
+    from .hrm import hrm_bp
     app.register_blueprint(main_bp)
+    app.register_blueprint(activities_bp)
+    app.register_blueprint(hrm_bp)
     return app

@@ -65,11 +65,19 @@ onMounted(() => {
     map.fitBounds(allBounds, { padding: [20, 20] });
     }
   }, { immediate: true, deep: true });
+  
 </script>
 
-<style>
-.map {
-  height: 500px;
-  width: 100%;
+<style scoped>
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  min-height: 100%;
+}
+
+/* If you have a custom wrapper ID, ensure it's also 100% */
+#map {
+  height: 100%;
+  min-height: 400px; /* Provides a fallback */
 }
 </style>

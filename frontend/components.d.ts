@@ -40,6 +40,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SpeedCard: typeof import('./src/components/ui/SpeedCard.vue')['default']
     'SpeedCard copy': typeof import('./src/components/ui/SpeedCard copy.vue')['default']
+    TrainingLoadCard: typeof import('./src/components/ui/TrainingLoadCard.vue')['default']
     WeightComponent: typeof import('./src/components/ui/WeightComponent.vue')['default']
   }
 }

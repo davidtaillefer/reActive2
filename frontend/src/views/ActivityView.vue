@@ -126,7 +126,7 @@ onMounted(async () => {
 
   if (hrmfile.value) {
     try {
-      const res = await fetch(apiBaseUrl + `hrm3/${hrmfile.value}`)
+      const res = await fetch(apiBaseUrl + `hrm/${hrmfile.value}`)
       if (res.ok) {
         const data = await res.json()
         hrmData.value.push(data)

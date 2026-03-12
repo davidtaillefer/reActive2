@@ -254,7 +254,7 @@ const uploadFile = async (fileItem: any) => {
 
     // Read the HRM file data immediately after upload
     try {
-      const res = await fetch(apiBaseUrl + `hrm3/${fileItem.name}`);
+      const res = await fetch(apiBaseUrl + `hrm/${fileItem.name}`);
       if (res.ok) {
         const data = await res.json();
         hrmData.value.push(data);
