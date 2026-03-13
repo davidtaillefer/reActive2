@@ -98,7 +98,7 @@ async function loadSports() {
       sportName.value = sport.name || ''
       if (sport.icon) {
         try {
-          iconUrl.value = new URL(`../assets/icons/${sport.icon}`, import.meta.url).href
+          iconUrl.value = `/icons/${sport.icon}`;
         } catch {
           iconUrl.value = ''
         }

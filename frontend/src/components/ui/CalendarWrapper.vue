@@ -12,6 +12,12 @@
     <!-- ATL Training Load Card -->
       <BCol lg="4" class="d-flex flex-column p-3 overflow-auto gap-3">
       <TrainingLoadCard :activities="activities2" :month="currentCalendarDate" />
+      <WeeklyTrainingCard 
+      :activities="activities2" 
+      :month="currentCalendarDate"
+      :sportNames="sportNames" 
+      :sportColours="sportColours" 
+    />
     </BCol>
     </BRow>
   </BContainer>
@@ -24,6 +30,7 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import bootstrapPlugin from '@fullcalendar/bootstrap'
 import TrainingLoadCard from '@/components/ui/TrainingLoadCard.vue'
+import WeeklyTrainingCard from '@/components/ui/WeeklyTrainingCard.vue'
 import { useRouter } from 'vue-router'
 import { BContainer, BRow, BCol } from 'bootstrap-vue-next'
 
@@ -37,6 +44,8 @@ const currentCalendarDate = ref(new Date())
 const sportsLoaded = ref(false)
 const sportIcons = ref<Record<number, string>>({})
 const pendingRange = ref<{ start: Date; end: Date } | null>(null)
+const sportNames = ref<Record<number, string>>({})
+const sportColours = ref<Record<number, string>>({})
 
 // --- Logic: Fetch Sports Meta ---
 const loadSports = async () => {
@@ -49,6 +58,17 @@ const loadSports = async () => {
       map[s.id] = s.icon || ''
       return map
     }, {})
+
+    sportColours.value = sports.reduce((map: any, s: any) => {
+  // Map API "colour" (or "color") to our proper "sportColours" variable
+  map[s.id] = s.colour || s.color || '#cccccc'; 
+  return map;
+}, {});
+    
+    sportNames.value = sports.reduce((map: any, s: any) => {
+      map[s.id] = s.name
+      return map
+    }, {})
     
     sportsLoaded.value = true
     
@@ -58,6 +78,10 @@ const loadSports = async () => {
       pendingRange.value = null
       fetchActivities(start, end)
     }
+
+    
+    
+
   } catch (err) {
     console.error('Failed to load sports', err)
   }
@@ -152,6 +176,7 @@ const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin, bootstrapPlugin],
   themeSystem: 'bootstrap',
   initialView: 'dayGridMonth',
+  //height: 'auto',
   headerToolbar: {
     left: 'prev,next today prevYear,nextYear',
     center: 'title',
@@ -185,18 +210,53 @@ const formatToISO = (dateStr: string) => {
   margin: 0 auto; /* centre horizontally */
 }
 
-/* ensure grid lines via option-added class */
+/*ensure grid lines via option-added class
 :deep(.fc-grid-line) {
   border: 1px solid #dee2e6;
 }
 
-/* full calendar outline */
+/* full calendar outline
 :deep(.fc) {
   border: 1px solid #dee2e6;
 }
 
-/* maintain earlier day-cell styling if necessary */
+/* maintain earlier day-cell styling if necessary
 :deep(.fc-daygrid-day-frame) {
   height: 100%;
+}*/
+
+/* Fix Calendar Borders and Grid Lines */
+:deep(.fc-theme-bootstrap) {
+  border: 1px solid #dee2e6 !important; /* Adds the missing outer borders */
 }
+
+:deep(.fc-scrollgrid) {
+  border: 1px solid #dee2e6 !important;
+}
+:deep(.fc-scroller) {
+  overflow: visible !important;
+  height: auto !important;
+}
+:deep(.fc-col-header) {
+  margin-right: 0 !important;
+  width: 100% !important;
+}
+/* Ensure vertical and horizontal grid lines are visible */
+:deep(.fc-td), 
+:deep(.fc-th),
+:deep(.fc-scrollgrid-sync-table td),
+:deep(.fc-col-header-cell) {
+  border: 1px solid #dee2e6 !important;
+}
+
+/* Fix the header (Day names) borders */
+:deep(.fc-col-header) {
+  border-bottom: 2px solid #dee2e6 !important;
+}
+
+/* Remove any stray double-borders on the right */
+:deep(.fc-scrollgrid-section-sticky > td) {
+  border-right: none !important;
+}
+
 </style>

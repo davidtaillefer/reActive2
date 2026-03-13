@@ -41,6 +41,7 @@ declare module 'vue' {
     SpeedCard: typeof import('./src/components/ui/SpeedCard.vue')['default']
     'SpeedCard copy': typeof import('./src/components/ui/SpeedCard copy.vue')['default']
     TrainingLoadCard: typeof import('./src/components/ui/TrainingLoadCard.vue')['default']
+    WeeklyTrainingCard: typeof import('./src/components/ui/WeeklyTrainingCard.vue')['default']
     WeightComponent: typeof import('./src/components/ui/WeightComponent.vue')['default']
   }
 }

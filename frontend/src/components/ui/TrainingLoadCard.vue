@@ -62,7 +62,7 @@ const atlData = computed(() => {
   // Use the pre-normalized date from our new parent logic
   const d = act.normalizedDate; 
   dailyLoads[d] = (dailyLoads[d] || 0) + (parseFloat(act.training_load) || 0);
-});S
+});
 
   // Start 30 days before current month
   const startDate = new Date(props.month.getFullYear(), props.month.getMonth(), 1);
@@ -89,7 +89,20 @@ const atlData = computed(() => {
 });
 
 const chartPoints = computed(() => daysInMonth.value.map(day => atlData.value[day] || 0))
-const currentATL = computed(() => chartPoints.value[chartPoints.value.length - 1] || 0)
+const currentATL = computed(() => {
+  const now = new Date();
+  const isCurrentMonth = props.month.getMonth() === now.getMonth() && 
+                         props.month.getFullYear() === now.getFullYear();
+
+  if (isCurrentMonth) {
+    const todayStr = now.toISOString().split('T')[0];
+    // Return today's calculated value, or the last available if today isn't calculated yet
+    return atlData.value[todayStr] || chartPoints.value[now.getDate() - 1] || 0;
+  }
+  
+  // Default behaviour for previous months: return the final day's value
+  return chartPoints.value[chartPoints.value.length - 1] || 0;
+});
 const peakATL = computed(() => Math.max(...chartPoints.value, 0))
 
 const chartData = computed(() => ({

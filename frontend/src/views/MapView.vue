@@ -113,10 +113,7 @@ function getSportIcon(sportId) {
   if (!sport?.icon) return null
 
   try {
-    const iconUrl = new URL(
-      `../assets/icons/${sport.icon}`,
-      import.meta.url
-    ).href
+    const iconUrl = `/icons/${sport.icon}`;
 
     return L.icon({
       iconUrl,
