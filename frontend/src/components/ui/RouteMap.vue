@@ -1,83 +1,82 @@
 <template>
-  <div class="card">
-    <div class="card-body">
-      <div ref="mapContainer" class="map"></div>
-    </div>
-  </div>
+  <div ref="mapContainer" class="map-container"></div>
 </template>
 
 <script setup>
-//import { computed } from 'vue'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, nextTick, onUnmounted } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-//import { watch, watchEffect } from 'vue'
 
-const props = defineProps(['hrmData']);
-const mapContainer = ref(null);
-let map = null;
-let polylineLayer = null;
-let polylineLayers = []
-let allBounds = L.latLngBounds();
-
-onMounted(() => {
-  map = L.map(mapContainer.value);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
+const props = defineProps({
+  hrmData: [Object, Array], // Support both single object or array
+  height: { type: String, default: '150px' }
 });
 
-  watch(() => props.hrmData, (newVal) => {
+const mapContainer = ref(null);
+let map = null;
+let polylineGroup = L.featureGroup(); // Use a Group to manage multiple routes
 
-    const trackData = newVal
-    const heartRateArray = Object.values(trackData).map(point => ({
-      timestamp: point.timestamp, // Ensure the exact key name matches your object
-      heart_rate: point.heart_rate // Adjust if the key is 'heartRate' or similar
-    }));
-    const rawTrack = newVal?.[newVal.length - 1]?.Activities?.Track;
+const initMap = () => {
+  if (!mapContainer.value || map) return;
+  map = L.map(mapContainer.value, { zoomControl: true, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  polylineGroup.addTo(map);
+};
 
-    if (rawTrack) {
-      const trackArray = Array.isArray(rawTrack) 
-        ? rawTrack 
-        : Object.values(rawTrack);
+const drawRoute = () => {
+  if (!map || !props.hrmData) return;
 
-      const validPoints = trackArray.filter(p => 
-        p && 
-        p.position_lat != null && 
-        p.position_long != null
-      );
+  // 1. Clear existing routes before redrawing
+  polylineGroup.clearLayers();
 
-      const latlngs = validPoints.map(p => [
-        Number(p.position_lat), 
-        Number(p.position_long)
-      ]);
+  // 2. Normalize data to an array
+  const activitiesToDraw = Array.isArray(props.hrmData) ? props.hrmData : [props.hrmData];
 
-      if (map && latlngs.length >= 2) {
-        
-        polylineLayer = L.polyline(latlngs, { color: 'red', weight: 3 }).addTo(map);
+  activitiesToDraw.forEach(activity => {
+    // Check both potential paths for the track data
+    const rawTrack = activity?.Activities?.Track || activity?.Track;
+    if (!rawTrack) return;
 
-        polylineLayers.push(polylineLayer);
-      
-        allBounds.extend(polylineLayer.getBounds());
-      }
+    const trackArray = Object.values(rawTrack);
+    const latlngs = trackArray
+      .filter(p => p.position_lat != null && p.position_long != null)
+      .map(p => [Number(p.position_lat), Number(p.position_long)]);
+
+    if (latlngs.length >= 2) {
+      L.polyline(latlngs, { color: 'red', weight: 3, opacity: 0.7 }).addTo(polylineGroup);
     }
-    if (polylineLayers.length > 0) {
-    map.fitBounds(allBounds, { padding: [20, 20] });
-    }
-  }, { immediate: true, deep: true });
-  
+  });
+
+  // 3. Fit the map to show ALL routes in the group
+  if (polylineGroup.getLayers().length > 0) {
+    map.fitBounds(polylineGroup.getBounds(), { padding: [20, 20] });
+    nextTick(() => map.invalidateSize());
+  }
+};
+
+onMounted(() => {
+  initMap();
+  drawRoute();
+  // Final safeguard for tiles
+  setTimeout(() => map?.invalidateSize(), 500);
+});
+
+// Watch for data changes (e.g. when the API fetch finishes)
+watch(() => props.hrmData, () => {
+  if (!map) initMap();
+  drawRoute();
+}, { deep: true });
+
+onUnmounted(() => {
+  if (map) map.remove();
+});
 </script>
 
 <style scoped>
-.leaflet-container {
-  height: 100% !important;
-  width: 100% !important;
-  min-height: 100%;
-}
-
-/* If you have a custom wrapper ID, ensure it's also 100% */
-#map {
-  height: 100%;
-  min-height: 400px; /* Provides a fallback */
+.map-container {
+  
+  width: 100%;
+  background: #f8f9fa;
 }
 </style>
+

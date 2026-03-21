@@ -13,7 +13,9 @@ def create_app():
     from .routes import main_bp
     from .activities import activities_bp
     from .hrm import hrm_bp
+    from .sync import sync_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(activities_bp)
     app.register_blueprint(hrm_bp)
+    app.register_blueprint(sync_bp)
     return app

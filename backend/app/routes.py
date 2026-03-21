@@ -67,7 +67,7 @@ def uploadpicture():
 @main_bp.route('/uploadhrm2', methods=['POST'])
 def uploadhrm2():
     
-    UPLOAD_FOLDER = '/mnt/data/gps/'
+    UPLOAD_FOLDER = '/mnt/data/gps/fit'
     ALLOWED_EXTENSIONS = {'fit', 'tcx', 'gpx'}
     print('Request received for HRM upload')
     
@@ -222,6 +222,30 @@ def readhealth(healthid):
     finally:
         cursor.close()
         conn.close()   
+
+@main_bp.route('/health/last_known', methods=['GET'])
+def get_last_known_weight():
+    # Get the start date of your current window from the query params
+    before_date = request.args.get('before') 
+    
+    # Query for the single most recent record before that date
+    query = """
+        SELECT weight /1000 as weight, date 
+        FROM health 
+        WHERE date < %s AND weight IS NOT NULL 
+        ORDER BY date DESC 
+        LIMIT 1
+    """
+    conn = exdb.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute(query, (before_date))
+    result = cursor.fetchone()
+    return jsonify(result)
+    
+    #if result:
+    #    return jsonify({'weight': result[0], 'date': result[1]})
+    #return jsonify({'weight': 82.7, 'date': None}) # Fallback baseline
+
         
 @main_bp.route('/stats')
 def stats():

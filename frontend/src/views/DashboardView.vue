@@ -9,37 +9,56 @@
         </h4>
         <div class="overflow-auto" style="max-height: calc(100vh - 150px)">
           <div class="d-flex flex-column gap-3">
-            <BCard v-for="workout in recentWorkouts" :key="workout.id">
+            <BCard v-for="workout in recentWorkouts" :key="workout.id" class="mb-3 shadow-sm border-0">
               <BCardBody>
-                <BCardTitle>{{ workout.name }}</BCardTitle>
-                <p class="text-muted small mb-2">{{ workout.date }}</p>
+                <BCardTitle class="h6 fw-bold mb-1">{{ workout.name }}</BCardTitle>
+                <p class="text-muted small mb-3">{{ workout.date }}</p>
 
-                <BRow class="g-2 mb-3">
+                <BRow class="g-2 mb-3 text-center">
                   <BCol cols="4">
-                    <div class="text-muted small">Distance</div>
-                    <div class="fw-bold">{{ workout.distance }}</div>
+                    <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Distance</div>
+                    <div class="fw-bold small">{{ workout.distance }}</div>
                   </BCol>
                   <BCol cols="4">
-                    <div class="text-muted small">Duration</div>
-                    <div class="fw-bold">{{ workout.duration }}</div>
+                    <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Time</div>
+                    <div class="fw-bold small">{{ workout.duration }}</div>
                   </BCol>
                   <BCol cols="4">
-                    <div class="text-muted small">Calories</div>
-                    <div class="fw-bold">{{ workout.calories }}</div>
+                    <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Calories</div>
+                    <div class="fw-bold small">{{ workout.calories }}</div>
                   </BCol>
                 </BRow>
 
-                <div style="height: 150px; border-radius: 0.375rem; overflow: hidden; background-color: #e9ecef; display: flex; align-items: center; justify-content: center; position: relative">
-                  <div class="text-center">
-                    <i class="bi bi-geo-alt-fill" style="font-size: 2rem; color: #6c757d"></i>
-                    <div class="small text-muted mt-2">Route Map</div>
+                <!-- Inside the recentWorkouts v-for loop -->
+                <div
+                  style="height: 150px; border-radius: 0.375rem; overflow: hidden; background-color: #e9ecef; position: relative">
+
+                  <!-- 1. Check for both hrmData AND the presence of GPS points -->
+                  <RouteMap v-if="workout.hrmData && hasGpsData(workout.hrmData)" :hrmData="[workout.hrmData]"
+                    class="h-100 w-100" />
+
+                  <!-- 2. Display a specific placeholder for non-GPS activities (e.g., Strength/Swimming) -->
+                  <div v-else-if="workout.hrmData"
+                    class="d-flex h-100 flex-column align-items-center justify-content-center text-muted">
+                    <i class="bi bi-pin-map-fill fs-3 mb-1"></i>
+                    <div style="font-size: 0.7rem;">No GPS Data for this Activity</div>
                   </div>
-                  <div style="position: absolute; bottom: 8px; left: 8px; font-size: 0.7rem; color: #6c757d">
-                    {{ workout.route[0][0].toFixed(4) }}, {{ workout.route[0][1].toFixed(4) }}
+
+                  <!-- 3. Show loading spinner while fetching hrmData -->
+                  <div v-else class="d-flex h-100 align-items-center justify-content-center">
+                    <BSpinner small variant="secondary" />
                   </div>
+
+                  <!-- Coordinate label: only show if the summary coordinates are non-zero
+  <div v-if="workout.latitude !== 0" style="position: absolute; bottom: 8px; left: 8px; font-size: 0.7rem; color: #6c757d; z-index: 1000; background: rgba(255,255,255,0.7); padding: 2px 4px; border-radius: 3px;">
+    {{ workout.latitude.toFixed(4) }}, {{ workout.longitude.toFixed(4) }}
+  </div> -->
                 </div>
+
+
               </BCardBody>
             </BCard>
+
           </div>
         </div>
       </BCol>
@@ -54,102 +73,25 @@
           <BRow class="g-3">
             <!-- Training Status -->
             <BCol cols="12" md="6">
-              <BCard class="h-100">
-                <BCardBody>
-                  <BCardTitle>
-                    <i class="bi bi-speedometer2 me-2"></i>
-                    Training Status
-                  </BCardTitle>
-                  <div class="text-center py-4">
-                    <div class="display-4 text-success mb-2">Productive</div>
-                    <p class="text-muted">
-                      Your training load is increasing at an optimal rate. Keep up the good work!
-                    </p>
-                    <BRow class="mt-3">
-                      <BCol cols="6">
-                        <div class="small text-muted">Load Ratio</div>
-                        <div class="fw-bold fs-5">1.2</div>
-                      </BCol>
-                      <BCol cols="6">
-                        <div class="small text-muted">Recovery Time</div>
-                        <div class="fw-bold fs-5">18h</div>
-                      </BCol>
-                    </BRow>
-                  </div>
-                </BCardBody>
-              </BCard>
+              <WeightCard />
             </BCol>
+
+            <!-- New Minimum Heart Rate Card -->
+            <BCol cols="12" md="6">
+              <MinHrCard />
+            </BCol>
+
+
 
             <!-- VO2max -->
             <BCol cols="12" md="6">
-              <BCard class="h-100">
-                <BCardBody>
-                  <BCardTitle>
-                    <i class="bi bi-heart-fill me-2"></i>
-                    VO2 Max
-                  </BCardTitle>
-                  <div class="display-6 text-primary mb-2">53 ml/kg/min</div>
-                  <p class="text-muted small mb-3">Superior fitness level</p>
-                  <div style="height: 180px">
-                    <Line :data="vo2maxData" :options="chartOptions" />
-                  </div>
-                </BCardBody>
-              </BCard>
-            </BCol>
-
-            <!-- Training Load -->
-            <BCol cols="12" md="6">
-              <BCard class="h-100">
-                <BCardBody>
-                  <BCardTitle>
-                    <i class="bi bi-graph-up-arrow me-2"></i>
-                    Training Load (Last Month)
-                  </BCardTitle>
-                  <BRow class="text-center py-3">
-                    <BCol cols="4">
-                      <div class="small text-muted">Current</div>
-                      <div class="fw-bold fs-4 text-primary">425</div>
-                    </BCol>
-                    <BCol cols="4">
-                      <div class="small text-muted">Average</div>
-                      <div class="fw-bold fs-4">380</div>
-                    </BCol>
-                    <BCol cols="4">
-                      <div class="small text-muted">Peak</div>
-                      <div class="fw-bold fs-4">465</div>
-                    </BCol>
-                  </BRow>
-                  <BProgress :max="100" height="30px">
-                    <BProgressBar :value="35" variant="success">Low</BProgressBar>
-                    <BProgressBar :value="45" variant="warning">Optimal</BProgressBar>
-                    <BProgressBar :value="20" variant="danger">High</BProgressBar>
-                  </BProgress>
-                  <div class="text-center mt-2">
-                    <i class="bi bi-caret-down-fill text-warning"></i>
-                    <span class="ms-1 small">Current Load</span>
-                  </div>
-                </BCardBody>
-              </BCard>
+              <VO2MaxCard />
             </BCol>
 
             <!-- Weight -->
+            <!-- Weekly Intensity Minutes -->
             <BCol cols="12" md="6">
-              <BCard class="h-100">
-                <BCardBody>
-                  <BCardTitle>
-                    <i class="bi bi-speedometer me-2"></i>
-                    Weight
-                  </BCardTitle>
-                  <div class="display-6 text-success mb-2">76.2 kg</div>
-                  <p class="text-muted small mb-3">
-                    <i class="bi bi-arrow-down text-success me-1"></i>
-                    -1.8 kg from January
-                  </p>
-                  <div style="height: 180px">
-                    <Line :data="weightData" :options="chartOptions" />
-                  </div>
-                </BCardBody>
-              </BCard>
+              <IntensityMinutesCard />
             </BCol>
 
             <!-- Sleep Stages -->
@@ -204,24 +146,7 @@
               </BCard>
             </BCol>
 
-            <!-- Weekly Intensity Minutes -->
-            <BCol cols="12" md="6">
-              <BCard class="h-100">
-                <BCardBody>
-                  <BCardTitle>
-                    <i class="bi bi-fire me-2"></i>
-                    Weekly Intensity Minutes
-                  </BCardTitle>
-                  <div class="mb-3">
-                    <div class="fw-bold fs-5">245 minutes</div>
-                    <p class="text-muted small mb-0">This week (85 vigorous + 160 moderate)</p>
-                  </div>
-                  <div style="height: 200px">
-                    <Bar :data="intensityData" :options="barChartOptions" />
-                  </div>
-                </BCardBody>
-              </BCard>
-            </BCol>
+
           </BRow>
         </div>
       </BCol>
@@ -230,8 +155,10 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { BContainer, BRow, BCol, BCard, BCardBody, BCardTitle, BProgress, BProgressBar } from 'bootstrap-vue-next';
 import { Line, Bar } from 'vue-chartjs';
+import 'leaflet/dist/leaflet.css';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -244,6 +171,10 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+
+import WeightCard from '@/components/ui/WeightCard.vue'
+import MinHrCard from '@/components/ui/MinHrCard.vue'
+import IntensityMinutesCard from '@/components/ui/IntensityMinutesCard.vue'
 
 // Register Chart.js components
 ChartJS.register(
@@ -258,79 +189,85 @@ ChartJS.register(
   Filler
 );
 
-// Mock workout data
-const recentWorkouts = [
-  {
-    id: 1,
-    name: 'Morning Run',
-    date: '2026-02-26',
-    distance: '8.2 km',
-    duration: '42:15',
-    calories: '452',
-    route: [
-      [37.7749, -122.4194],
-      [37.7779, -122.4162],
-      [37.7809, -122.4130],
-      [37.7839, -122.4098],
-    ],
-  },
-  {
-    id: 2,
-    name: 'Evening Ride',
-    date: '2026-02-25',
-    distance: '24.5 km',
-    duration: '1:18:32',
-    calories: '687',
-    route: [
-      [37.7649, -122.4294],
-      [37.7679, -122.4262],
-      [37.7709, -122.4230],
-      [37.7739, -122.4198],
-    ],
-  },
-  {
-    id: 3,
-    name: 'Trail Run',
-    date: '2026-02-24',
-    distance: '12.3 km',
-    duration: '1:05:22',
-    calories: '589',
-    route: [
-      [37.7549, -122.4394],
-      [37.7579, -122.4362],
-      [37.7609, -122.4330],
-      [37.7639, -122.4298],
-    ],
-  },
-  {
-    id: 4,
-    name: 'Recovery Ride',
-    date: '2026-02-23',
-    distance: '15.8 km',
-    duration: '52:18',
-    calories: '412',
-    route: [
-      [37.7449, -122.4494],
-      [37.7479, -122.4462],
-      [37.7509, -122.4430],
-      [37.7539, -122.4398],
-    ],
-  },
-  {
-    id: 5,
-    name: 'Tempo Run',
-    date: '2026-02-22',
-    distance: '10.5 km',
-    duration: '48:35',
-    calories: '521',
-    route: [
-      [37.7349, -122.4594],
-      [37.7379, -122.4562],
-      [37.7409, -122.4530],
-      [37.7439, -122.4498],
-    ],
-  },
-];
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+const recentWorkouts = ref([])
+
+// Helper to format seconds to HH:MM:SS
+const formatDuration = (seconds: number) => {
+  const h = Math.floor(seconds / 3600).toString().padStart(2, '0')
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0')
+  const s = Math.floor(seconds % 60).toString().padStart(2, '0')
+  return `${h}:${m}:${s}`
+}
+
+const props = defineProps({
+  hrmData: Array
+});
+
+watch(() => props.hrmData, async (newData) => {
+  if (newData && mapInstance.value) {
+    await nextTick();
+    // Forces Leaflet to detect the actual container size
+    mapInstance.value.invalidateSize();
+    // Re-draw the polyline
+    drawRoute(newData);
+  }
+}, { deep: true });
+
+
+const fetchRecentWorkouts = async (count: number = 10) => {
+  try {
+    const res = await fetch(`${apiBaseUrl}activities/recent/${count}`);
+    const summaryData = await res.json();
+
+    // 1. Initialise the list with summary data
+    recentWorkouts.value = summaryData.map((workout: any) => ({
+      ...workout,
+      hrmData: null, // Placeholder for the map data
+      distance: `${(workout.distance / 1000).toFixed(2)} km`,
+      duration: formatDuration(workout.duration),
+      date: new Date(workout.date).toLocaleDateString('en-CA', {
+        weekday: 'short', month: 'short', day: 'numeric'
+      })
+    }));
+
+    // 2. Fetch HRM data for each workout in parallel for the maps
+    recentWorkouts.value.forEach(async (workout, index) => {
+      if (workout.hrmfile) {
+        try {
+          const hrmRes = await fetch(`${apiBaseUrl}hrm/${workout.hrmfile}`);
+          if (hrmRes.ok) {
+            const hrmJson = await hrmRes.json();
+            // Update the specific workout to trigger the map render
+            recentWorkouts.value[index].hrmData = hrmJson;
+          }
+        } catch (err) {
+          console.error(`Failed to load map for ${workout.id}`, err);
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Error loading dashboard workouts:', err);
+  }
+};
+
+
+onMounted(() => {
+  fetchRecentWorkouts(10)
+})
+
+const hasGpsData = (hrmData: any) => {
+  // Access the Track object from your specific HRM data structure
+  const track = hrmData?.Activities?.Track;
+  if (!track) return false;
+
+  // Check if any point in the track has valid position data
+  // Garmin track points for non-GPS activities usually omit these fields
+  return Object.values(track).some((point: any) =>
+    point.position_lat !== undefined && point.position_long !== undefined
+  );
+};
+
 
 // VO2max data
 const vo2maxData = {

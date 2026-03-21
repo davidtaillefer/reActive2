@@ -11,7 +11,7 @@ from garmin_fit_sdk import Decoder, Stream
 import math
 import numbers
 import time
-import pymysql
+
 
 activities_bp = Blueprint('activities', __name__)
 
@@ -63,7 +63,31 @@ def activity(activityid):
     finally:
         cursor.close()
         conn.close()
+
+# GET the most recent x activity records 
         
+@activities_bp.route('/activities/recent/<int:number>')
+def recentactivities(number):
+    try:
+        conn = exdb.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        sql = "SELECT * FROM activities ORDER BY date DESC LIMIT %s"
+        cursor.execute(sql, number)
+        activities = cursor.fetchall()
+        print(activities)
+        for activity in activities:
+            print(activity['date'], activity['tzoffset'])   
+            activity['date'] = activity['date'] + timedelta(hours=activity['tzoffset'])
+        res = jsonify(activities)
+        res.status_code = 200
+
+        return res
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close() 
+        conn.close()
+
 # Create new activity record        
     
 @activities_bp.route('/activities', methods=['POST'])
@@ -217,3 +241,16 @@ def updateactivity(id):
         cursor.close() 
         conn.close()
         print("Activity Update Done!")
+
+@activities_bp.route('/activities/bounds', methods=['GET'])
+def get_activity_bounds():
+    # Find the absolute first and last activity dates
+    query = "SELECT MIN(date), MAX(date) FROM activities"
+    cursor = exdb.get_db().cursor()
+    cursor.execute(query)
+    result = cursor.fetchone()
+    
+    return jsonify({
+        "start": result[0], # e.g., "2023-01-15"
+        "end": result[1]    # e.g., "2026-03-16"
+    })

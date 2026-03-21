@@ -18,6 +18,8 @@
       :sportNames="sportNames" 
       :sportColours="sportColours" 
     />
+              <TrainingStatusCard/>
+    
     </BCol>
     </BRow>
   </BContainer>
@@ -31,6 +33,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import bootstrapPlugin from '@fullcalendar/bootstrap'
 import TrainingLoadCard from '@/components/ui/TrainingLoadCard.vue'
 import WeeklyTrainingCard from '@/components/ui/WeeklyTrainingCard.vue'
+import TrainingStatusCard from '@/components/ui/TrainingStatusCard.vue'
 import { useRouter } from 'vue-router'
 import { BContainer, BRow, BCol } from 'bootstrap-vue-next'
 
@@ -176,6 +179,8 @@ const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin, bootstrapPlugin],
   themeSystem: 'bootstrap',
   initialView: 'dayGridMonth',
+  showNonCurrentDates: false,
+  fixedWeekCount: false,
   //height: 'auto',
   headerToolbar: {
     left: 'prev,next today prevYear,nextYear',

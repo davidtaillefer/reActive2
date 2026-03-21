@@ -29,6 +29,8 @@
         <div v-else class="p-3 bg-white rounded shadow-sm flex-fill d-flex align-items-center justify-content-center">
           <p class="mb-0">No HRM file data available.</p>
         </div>
+        
+        
       </BCol>
 
       <!-- Metrics Section (1/3 width on lg+) -->
@@ -58,8 +60,53 @@
           :activity="activity"
           :hrmData="hrmData"
         />
+            <HRZonesCard :hrmData="hrmData[0]" />
+    <PowerZonesCard :hrmData="hrmData[0]" />
+
       </BCol>
 
+  
+<BRow class="mt-3">
+  <!-- Aerobic (ATE) -->
+  <BCol md="4">
+    <TrainingEffectCard 
+      title="Aerobic TE"
+      :score="Number(activity.ate)"
+      :benefit="activity.intensity"
+      icon="i-bi-wind"
+      icon-color="text-info"
+    />
+  </BCol>
+
+  <!-- Anaerobic (ANTE) -->
+  <BCol md="4">
+    <TrainingEffectCard 
+      title="Anaerobic TE"
+      :score="Number(activity.ante)"
+      icon="i-bi-lightning-fill"
+      icon-color="text-warning"
+    />
+  </BCol>
+</BRow>
+
+
+    </BRow>
+    <BRow>
+  <BCol cols="12">
+    <ActivityLapsTable :hrmData="hrmData" />
+    <ActivitySetsTable :hrmData="hrmData" />
+  </BCol>
+</BRow>
+    
+    <!-- Footer -->
+    <BRow>
+      <BCard class="mb-4 w-100">
+        <!-- HRM File -->
+        <BCol cols="auto" class="mb-2 mb-lg-0">
+          <div class="label">File:</div>
+          <div class="value">{{ activity.hrmfile || '-' }}</div>
+        </BCol>
+      </BCard>
     </BRow>
   </BContainer>
 </template>
@@ -68,7 +115,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { BContainer, BRow, BCol } from 'bootstrap-vue-next'
+import { BContainer, BRow, BCol, BCard, BCardBody } from 'bootstrap-vue-next'
 
 import ActivityDetails from '@/components/ui/ActivityDetails.vue'
 import RouteMap from '@/components/ui/RouteMap.vue'

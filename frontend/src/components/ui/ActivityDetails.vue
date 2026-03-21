@@ -11,7 +11,7 @@
         </BCol>
 
         <!-- Sport Name & Date -->
-        <BCol class="text-lg-start mb-2 mb-lg-0">
+        <BCol cols="auto" class="text-lg-start mb-2 mb-lg-0">
           <div class="sport-name">{{ sportName }} - {{ activity.name }}</div>
           <div class="date-text">{{ formattedDate }}</div>
         </BCol>
@@ -52,14 +52,10 @@
           <div class="label">Workout Feel</div>
         </BCol>
 
-        <!-- HRM File -->
-        <BCol cols="auto" class="mb-2 mb-lg-0">
-          <div class="label">File:</div>
-          <div class="value">{{ activity.hrmfile || '-' }}</div>
-        </BCol>
+        
 
         <!-- Edit Button -->
-        <BCol cols="auto" class="mb-2 mb-lg-0">
+        <BCol cols="auto" class="ms-auto d-flex align-items-center gap-2">
           <router-link :to="`/activity/${activity.id}/edit`">
             <BButton variant="primary">Edit</BButton>
           </router-link>
@@ -111,6 +107,7 @@ const formattedDuration = computed(() => {
 }
 
 .sport-name {
+  font-size: 1.5rem;
   font-weight: 600;
 }
 
@@ -120,12 +117,12 @@ const formattedDuration = computed(() => {
 }
 
 .value {
-  font-size: 1.1rem;
-  font-weight: bold;
+  font-size: 1.5rem;
+  font-weight: normal;
 }
 
 .label {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: #666;
 }
 </style>
