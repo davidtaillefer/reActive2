@@ -4,7 +4,7 @@
       <!-- Left side - Recent Workouts -->
       <BCol cols="12" lg="4">
         <h4 class="mb-3">
-          <i class="bi bi-activity me-2"></i>
+          <IBiActivity />
           Recent Workouts
         </h4>
         <div class="overflow-auto" style="max-height: calc(100vh - 150px)">
@@ -66,7 +66,7 @@
       <!-- Right side - Health Metrics -->
       <BCol cols="12" lg="8">
         <h4 class="mb-3">
-          <i class="bi bi-heart-pulse-fill me-2"></i>
+          <IBiHeartPulse />
           Health & Fitness Metrics
         </h4>
         <div class="overflow-auto" style="max-height: calc(100vh - 150px)">
@@ -75,7 +75,10 @@
             <BCol cols="12" md="6">
               <WeightCard />
             </BCol>
-
+            <!-- Weekly Intensity Minutes -->
+            <BCol cols="12" md="6">
+              <IntensityMinutesCard />
+            </BCol>
             <!-- New Minimum Heart Rate Card -->
             <BCol cols="12" md="6">
               <MinHrCard />
@@ -88,10 +91,11 @@
               <VO2MaxCard />
             </BCol>
 
-            <!-- Weight -->
-            <!-- Weekly Intensity Minutes -->
             <BCol cols="12" md="6">
-              <IntensityMinutesCard />
+              <StepsCard />
+            </BCol>
+            <BCol cols="12" md="6">
+              <StairsCard />
             </BCol>
 
             <!-- Sleep Stages -->
@@ -175,6 +179,8 @@ import {
 import WeightCard from '@/components/ui/WeightCard.vue'
 import MinHrCard from '@/components/ui/MinHrCard.vue'
 import IntensityMinutesCard from '@/components/ui/IntensityMinutesCard.vue'
+import StepsCard from '../components/ui/StepsCard.vue';
+import StairsCard from '../components/ui/StairsCard.vue';
 
 // Register Chart.js components
 ChartJS.register(

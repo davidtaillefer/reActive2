@@ -1,15 +1,9 @@
 <template>
-  <BContainer fluid class="activity-view h-100 d-flex flex-column p-3">
-
-    <!-- Activity Details Section -->
-    <BRow>
+  <BContainer fluid class="p-3">
+    <BRow class="g-3">
       <BCol>
-        <ActivityDetails
-          v-if="activity && Object.keys(activity).length"
-          :activity="activity"
-          :icon-url="iconUrl"
-          :sport-name="sportName"
-        />
+        <ActivityDetails v-if="activity && Object.keys(activity).length" :activity="activity" :icon-url="iconUrl"
+          :sport-name="sportName" />
         <div v-else class="p-3 bg-white rounded shadow-sm">
           <p class="mb-0">No activity data provided.</p>
         </div>
@@ -17,102 +11,79 @@
     </BRow>
 
     <!-- Main Content Section -->
-    <BRow class="flex-fill overflow-hidden mt-3">
-
+    <BRow class="g-3" style="height: calc(100vh - 300px);">
       <!-- Route Map (2/3 width on lg+) -->
-      <BCol lg="8" class="d-flex overflow-hidden">
-        <RouteMap
-          v-if="hrmData"
-          :hrmData="hrmData"
-          class="flex-fill"
-        />
+
+      <BCol cols="12" lg="8" class="d-flex flex-column h-100">
+        <RouteMap v-if="metricsAvailability.position" :hrmData="hrmData" class="flex-grow-1 shadow-sm" />
         <div v-else class="p-3 bg-white rounded shadow-sm flex-fill d-flex align-items-center justify-content-center">
           <p class="mb-0">No HRM file data available.</p>
         </div>
-        
-        
       </BCol>
 
       <!-- Metrics Section (1/3 width on lg+) -->
-      <BCol lg="4" class="d-flex flex-column p-3 overflow-auto gap-3">
-        <HeartRateCard
-          v-if="activity && Object.keys(activity).length && hrmData"
-          :activity="activity"
-          :hrmData="hrmData"
-        />        
-        <SpeedCard 
-          v-if="activity && Object.keys(activity).length && hrmData"
-          :activity="activity"
-          :hrmData="hrmData"
-        />
-        <ElevationCard
-          v-if="activity && Object.keys(activity).length && hrmData"
-          :activity="activity"
-          :hrmData="hrmData"
-        />   
-        <CadenceCard 
-          v-if="activity && Object.keys(activity).length && hrmData"
-          :activity="activity"
-          :hrmData="hrmData"
-        />
-        <PowerCard
-          v-if="activity && Object.keys(activity).length && hrmData"
-          :activity="activity"
-          :hrmData="hrmData"
-        />
-            <HRZonesCard :hrmData="hrmData[0]" />
-    <PowerZonesCard :hrmData="hrmData[0]" />
+      <BCol lg="4" class="d-flex flex-column h-100">
+        <div class="flex-grow-1 overflow-auto d-flex flex-column gap-3 pe-2">
+          <HeartRateCard v-if="metricsAvailability.heartRate" :activity="activity"
+            :hrmData="hrmData" />
+          <SpeedCard v-if="metricsAvailability.speed" :activity="activity"
+            :hrmData="hrmData" />
+          <ElevationCard v-if="metricsAvailability.elevation" :activity="activity"
+            :hrmData="hrmData" />
+          <CadenceCard v-if="metricsAvailability.cadence" :activity="activity"
+            :hrmData="hrmData" />
+          <PowerCard v-if="metricsAvailability.power" :activity="activity"
+            :hrmData="hrmData" />
+          <HRZonesCard :hrmData="hrmData[0]" />
+          <PowerZonesCard v-if="metricsAvailability.power" :hrmData="hrmData[0]" />
+          <BRow class="mt-3">
+            <!-- Aerobic (ATE) -->
+            <BCol md="6">
+              <TrainingEffectCard title="Aerobic TE" :score="Number(activity.ate)" :benefit="activity.intensity"
+                icon="i-bi-wind" icon-color="text-info" />
+            </BCol>
 
+            <!-- Anaerobic (ANTE) -->
+            <BCol md="6">
+              <TrainingEffectCard title="Anaerobic TE" :score="Number(activity.ante)" icon="i-bi-lightning-fill"
+                icon-color="text-warning" />
+            </BCol>
+          </BRow>
+        </div>
       </BCol>
 
-  
-<BRow class="mt-3">
-  <!-- Aerobic (ATE) -->
-  <BCol md="4">
-    <TrainingEffectCard 
-      title="Aerobic TE"
-      :score="Number(activity.ate)"
-      :benefit="activity.intensity"
-      icon="i-bi-wind"
-      icon-color="text-info"
-    />
-  </BCol>
 
-  <!-- Anaerobic (ANTE) -->
-  <BCol md="4">
-    <TrainingEffectCard 
-      title="Anaerobic TE"
-      :score="Number(activity.ante)"
-      icon="i-bi-lightning-fill"
-      icon-color="text-warning"
-    />
-  </BCol>
-</BRow>
+
 
 
     </BRow>
-    <BRow>
-  <BCol cols="12">
-    <ActivityLapsTable :hrmData="hrmData" />
-    <ActivitySetsTable :hrmData="hrmData" />
-  </BCol>
-</BRow>
-    
+    <BRow class="mt-3">
+      <BCol cols="12">
+        <ActivityLapsTable :hrmData="hrmData" />
+        <ActivitySetsTable :hrmData="hrmData" />
+      </BCol>
+    </BRow>
+
     <!-- Footer -->
     <BRow>
-      <BCard class="mb-4 w-100">
-        <!-- HRM File -->
-        <BCol cols="auto" class="mb-2 mb-lg-0">
-          <div class="label">File:</div>
-          <div class="value">{{ activity.hrmfile || '-' }}</div>
-        </BCol>
-      </BCard>
+      <BCol>
+        <BCard class="mb-4 mt-3 w-100">
+          <BCardBody>
+            <!-- HRM File -->
+            <BCol cols="auto" class="mb-2 mb-lg-0">
+              <div class="label">HRM File:</div>
+              <div class="value">{{ activity.hrmfile || '-' }}</div>
+              <p>{{metricsAvailability}}</p>
+            </BCol>
+          </BCardBody>
+        </BCard>
+      </BCol>
     </BRow>
-  </BContainer>
+  </BContainer>"
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { BContainer, BRow, BCol, BCard, BCardBody } from 'bootstrap-vue-next'
@@ -187,6 +158,35 @@ onMounted(async () => {
 
   await loadSports()
 })
+
+const getFieldSeries = (field: string) => {
+  if (!hrmData?.value?.length) return []
+
+  return hrmData.value.flatMap(activity =>
+    Object.values(activity.Activities?.Track || {})
+      .map((point: any) => point[field])
+      .filter(v => v != null)
+  )
+}
+
+const hasMeaningfulData = (field: string) => {
+  const series = getFieldSeries(field)
+
+  if (!series.length) return false
+
+  return series.some(v => typeof v === 'number' && v > 0)
+}
+
+const metricsAvailability = computed(() => ({
+  heartRate: hasMeaningfulData('heart_rate'),
+  power: hasMeaningfulData('power'),
+  cadence: hasMeaningfulData('cadence'),
+  speed: hasMeaningfulData('enhanced_speed'),
+  elevation: hasMeaningfulData('enhanced_altitude'),
+  distance: hasMeaningfulData('distance'),
+  position: hasMeaningfulData('position_lat')
+}))
+
 </script>
 
 <style scoped>
@@ -194,6 +194,11 @@ onMounted(async () => {
   /* Full-height container padding */
   height: 100%;
   padding: 1rem;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
 }
 
 /* Optional: make metrics section scroll nicely */

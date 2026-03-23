@@ -1,33 +1,34 @@
 <template>
-  <div class="hr-widget card shadow-sm">
-    <div class="top-section">
-      <div class="donut-container">
-        <!-- Chart.js Doughnut -->
-        <Doughnut :data="donutData" :options="donutOptions" />
-        <div class="donut-center">
-          <div class="current-hr">{{ currentHr.toFixed(0) }}</div>
-          <div class="goal-hr">Goal: {{ goalHr }}</div>
+  <BCard class="h-100 shadow-sm">
+    <BCardBody>
+      <div class="card-header-row">
+        <div class="card-title">
+          <IBiHeart />
+          Resting Heart Rate
+        </div>
+      </div>
+      <div class="card-top">
+        <div class="donut-container">
+          <Doughnut :data="donutData" :options="donutOptions" />
+          <div class="donut-center">
+            <div class="current-value">{{ currentHr.toFixed(0) }}</div>
+          </div>
+        </div>
+        <div class="card-visual"></div>
+        <div class="card-metrics">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="current-big">{{ currentHr.toFixed(0) }} <span class="unit">bpm</span></div>
+            <div class="status-pill">{{ statusText }} bpm</div>
+          </div>
+          <p class="summary-text">{{ summaryText }}</p>
         </div>
       </div>
 
-      <div class="info-panel">
-        <div class="current-big">{{ currentHr.toFixed(0) }} <span class="unit">bpm</span></div>
-        <div class="status-pill">Above goal: +{{ progressHr }} bpm</div>
-        <p class="summary-text">You've reached <strong>{{ progressPercent }}%</strong> of your target!</p>
+      <div class="card-bottom">
+        <Line :data="lineData" :options="lineOptions" :key="hrHistory.length" />
       </div>
-    </div>
-
-    <div class="bottom-section">
-      <!-- Chart.js Line -->
-      <div class="ct-chart">
-  <Line 
-    :data="lineData" 
-    :options="lineOptions" 
-    :key="hrHistory.length" 
-  />
-</div>
-    </div>
-  </div>
+    </BCardBody>
+  </BCard>
 </template>
 
 <script setup>
@@ -49,42 +50,64 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcEleme
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const currentHr = ref(0);
-const goalHr = ref(60);
+const minHrRange = ref(48);
+const maxHrRange = ref(52);
 const hrHistory = ref([]);
 const days = ref([]);
 const records = ref([]);
 
-// --- Logic Helpers ---
-const initialHr = computed(() => {
-  const first = records.value.find(r => r.resting_HR != null);
-  return first ? first.resting_HR : goalHr.value + 10;
-});
+const statusText = computed(() => {
+  if (currentHr.value >= maxHrRange.value) return 'Above Target'
+  if (currentHr.value >= minHrRange.value) return 'On Target'
+  return 'Below Target'
+})
 
-const progressHr = computed(() => (currentHr.value - goalHr.value).toFixed(1));
+const summaryText = computed(() => {
+  if (currentHr.value >= maxHrRange.value) return 'Your Body is Stressed'
+  if (currentHr.value >= minHrRange.value) return 'Within Normal Range'
+  return 'Below Normal Range'
+})
 
 const progressPercent = computed(() => {
-  const totalDifference = initialHr.value - goalHr.value;
-  const improvement = initialHr.value - currentHr.value;
-  // If we've reached or passed the goal, return 100%
-  if (currentHr.value <= goalHr.value) return 100;
-  return totalDifference > 0 ? Math.round((improvement / totalDifference) * 100) : 0;
-});
+  const min = minHrRange.value - 5
+  const max = maxHrRange.value + 5
+  const range = max - min
 
-// --- Chart Configurations ---
+  if (range <= 0) return 0
+
+  const raw = ((currentHr.value - min) / range) * 100
+
+  return Math.max(0, Math.min(100, Math.round(raw)))
+})
+
 const donutData = computed(() => ({
   datasets: [{
-    data: [Math.max(0, progressPercent.value), Math.max(0, 100 - progressPercent.value)],
-    backgroundColor: ['#ff4f4f', '#f0f0f0'],
+    data: [
+      progressPercent.value,
+      100 - progressPercent.value
+    ],
+    backgroundColor: [
+        currentHr.value >= maxHrRange.value ? '#800080' :
+          currentHr.value >= minHrRange.value ? '#dc3545' :
+            '#ffc107',
+        '#e9ecef'
+      ],
     borderWidth: 0,
-    cutout: '85%'
+    cutout: '70%',
+    borderRadius: 6
   }]
-}));
+}))
 
 const donutOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: { legend: { display: false }, tooltip: { enabled: false } }
-};
+  rotation: -90,
+  circumference: 180,
+  plugins: {
+    legend: { display: false },
+    tooltip: { enabled: false },
+  }
+}
 
 const lineData = computed(() => ({
   labels: days.value,
@@ -127,7 +150,7 @@ async function loadData(start, end) {
     records.value.forEach(r => {
       const d = new Date(r.date);
       labels.push(new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(d));
-      
+
       // Note: Using the field name from your original loop 'resting_HR_HR' 
       // but provided a fallback for 'resting_HR' common in your logic
       const v = r.resting_HR_HR || r.resting_HR;
@@ -164,17 +187,55 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.hr-widget { padding: 20px; width: 100%; max-width: 700px; border: none; }
-.top-section { display: flex; align-items: center; justify-content: flex-start; }
-.donut-container { position: relative; width: 162px; height: 162px; flex-shrink: 0; }
-.donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
-.current-hr { font-size: 30px; font-weight: 600; color: #ff4f4f; line-height: 1; }
-.goal-hr { font-size: 14px; color: #888; margin-top: 4px; }
-.info-panel { margin-left: 40px; }
-.current-big { font-size: 34px; font-weight: bold; color: #ff4f4f; }
-.unit { font-size: 18px; color: #888; }
-.status-pill { margin-top: 12px; padding: 6px 16px; border-radius: 999px; display: inline-block; font-size: 12px; background: rgba(255,79,79,0.1); color: #ff4f4f; font-weight: 600; }
-.summary-text { margin-top: 10px; color: #666; font-size: 14px; }
-.bottom-section { margin-top: 40px; }
-.ct-chart { height: 160px; width: 100%; }
+.donut-container {
+  position: relative;
+  width: 120px;
+  height: 80px;
+}
+
+.donut-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.donut-center {
+  position: absolute;
+  left: 50%;
+  top: 65%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.current-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.info-panel {
+  flex: 1;
+}
+
+.current-big {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.status-pill {
+  margin-top: 12px;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  margin: 6px 0;
+  background: rgba(255, 79, 79, 0.1);
+  color: #ff4f4f;
+  font-weight: 600;
+}
+
+.summary-text {
+  font-size: 0.85rem;
+}
 </style>

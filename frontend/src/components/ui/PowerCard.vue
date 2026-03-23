@@ -25,7 +25,7 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  hrmData: {type: Array, required: true},
+  hrmData: {  type: Array, required: true},
 });
 const value1 = ref(props.activity?.avgpower?.toFixed(0) || 'N/A');
 const value2 = ref(props.hrmData?.[0]?.Activities?.max_power?.toFixed(0)  || 'N/A');
@@ -44,7 +44,7 @@ const chartData = computed(() => {
     datasets: [
       {
         label: 'Power',
-        data: trackData.map(d => d.power || 0),
+        data: trackData.map(d => d.power || null),
         borderColor: 'purple',
         backgroundColor: 'rgba(128, 0, 128, 0.1)',
         tension: 0.4,

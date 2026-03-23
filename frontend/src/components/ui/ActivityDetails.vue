@@ -1,6 +1,6 @@
 <template>
   <BCard class="mb-4 w-100">
-    <BCardBody class="p-3">
+    <BCardBody>
       <BRow class="align-items-center text-center text-lg-start">
 
         <!-- Activity Icon -->
@@ -101,7 +101,7 @@ const formattedDuration = computed(() => {
 
 <style scoped>
 .activity-category img {
-  width: 32px;
+  width: 48px;
   display: block;
   margin: 0 auto;
 }

@@ -2,23 +2,17 @@
   <BCard class="h-100">
     <BCardBody>
       <BCardTitle>
-                  <IBiSpeedometer2 class="text-success fs-3" />
+        <IBiSpeedometer2 class="text-success fs-3" />
         Training Status
       </BCardTitle>
-
       <div class="text-center py-4">
-        <!-- Loading -->
         <div v-if="loading">
           <BSpinner />
           <div class="mt-2 text-muted">Loading...</div>
         </div>
-
-        <!-- Error -->
         <div v-else-if="error">
           <div class="text-danger">{{ error }}</div>
         </div>
-
-        <!-- Data -->
         <div v-else-if="status">
           <div :class="`display-4 text-${status.color} mb-2`">
             {{ status.label }}

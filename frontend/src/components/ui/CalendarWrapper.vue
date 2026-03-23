@@ -1,26 +1,22 @@
 <template>
-  <BContainer fluid class="activity-view h-100 d-flex flex-column p-3">
-    <BRow class="flex-fill overflow-hidden mt-3">
-      <BCol lg="8" class="d-flex overflow-hidden">
-      <div class="card flex-fill overflow-hidden">
-        <div class="card-body">
-          <!-- FullCalendar with options -->
-          <FullCalendar :options="calendarOptions" />
+  <BContainer fluid class="h-100 p-4 overflow-auto">
+    <BRow class="h-100 g-3">
+      <BCol cols="12" lg="8" class="overflow-auto" style="max-height: calc(100vh - 150px)">
+        <div class="d-flex flex-column gap-3">
+          <BCard class="h-100 shadow-sm">
+            <BCardBody>
+              <!-- FullCalendar with options -->
+              <FullCalendar :options="calendarOptions" />
+            </BCardBody>
+          </BCard>
         </div>
-      </div>
-    </BCol>
-    <!-- ATL Training Load Card -->
-      <BCol lg="4" class="d-flex flex-column p-3 overflow-auto gap-3">
-      <TrainingLoadCard :activities="activities2" :month="currentCalendarDate" />
-      <WeeklyTrainingCard 
-      :activities="activities2" 
-      :month="currentCalendarDate"
-      :sportNames="sportNames" 
-      :sportColours="sportColours" 
-    />
-              <TrainingStatusCard/>
-    
-    </BCol>
+      </BCol>
+      <BCol cols="12" lg="4" class="d-flex flex-column overflow-auto gap-3">
+        <TrainingLoadCard :activities="activities2" :month="currentCalendarDate" />
+        <WeeklyTrainingCard :activities="activities2" :month="currentCalendarDate" :sportNames="sportNames"
+          :sportColours="sportColours" />
+        <TrainingStatusCard />
+      </BCol>
     </BRow>
   </BContainer>
 </template>
@@ -56,25 +52,25 @@ const loadSports = async () => {
     const res = await fetch(`${apiBaseUrl}sports`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const sports = await res.json()
-    
+
     sportIcons.value = sports.reduce((map: any, s: any) => {
       map[s.id] = s.icon || ''
       return map
     }, {})
 
     sportColours.value = sports.reduce((map: any, s: any) => {
-  // Map API "colour" (or "color") to our proper "sportColours" variable
-  map[s.id] = s.colour || s.color || '#cccccc'; 
-  return map;
-}, {});
-    
+      // Map API "colour" (or "color") to our proper "sportColours" variable
+      map[s.id] = s.colour || s.color || '#cccccc';
+      return map;
+    }, {});
+
     sportNames.value = sports.reduce((map: any, s: any) => {
       map[s.id] = s.name
       return map
     }, {})
-    
+
     sportsLoaded.value = true
-    
+
     // Process any range that was requested while sports were loading
     if (pendingRange.value) {
       const { start, end } = pendingRange.value
@@ -82,8 +78,8 @@ const loadSports = async () => {
       fetchActivities(start, end)
     }
 
-    
-    
+
+
 
   } catch (err) {
     console.error('Failed to load sports', err)
@@ -97,9 +93,9 @@ const fetchActivities = async (start, end) => {
   currentCalendarDate.value = new Date(mid.getFullYear(), mid.getMonth(), 1)
 
   // 2. Create the 30-day "Buffer" for ATL calculation
-   const bufferStart = new Date(start)
+  const bufferStart = new Date(start)
   bufferStart.setDate(bufferStart.getDate() - 30)
-  
+
   const startStr = bufferStart.toISOString().split('T')[0]
   const endStr = end.toISOString().split('T')[0]
 
@@ -126,15 +122,15 @@ const fetchActivities = async (start, end) => {
         const cleanDate = new Date(a.date).toISOString().split('T')[0];
         const iconName = sportIcons.value[a.sport] || '';
         // Public assets are served from the root '/'
-        const iconUrl = iconName ? `/icons/${iconName}` : ''; 
-    
-    return {
-      title: a.name || 'Activity',
-      start: cleanDate, // Must be exactly 'YYYY-MM-DD'
-      allDay: true,
-      extendedProps: { iconUrl, activity: a }
-    };
-  });
+        const iconUrl = iconName ? `/icons/${iconName}` : '';
+
+        return {
+          title: a.name || 'Activity',
+          start: cleanDate, // Must be exactly 'YYYY-MM-DD'
+          allDay: true,
+          extendedProps: { iconUrl, activity: a }
+        };
+      });
 
   } catch (err) {
     console.error('Failed to load activities', err);
@@ -188,7 +184,7 @@ const calendarOptions = computed(() => ({
     right: 'dayGridMonth,dayGridYear',
   },
   // FullCalendar will now reactively update when calendarEvents changes
-  events: calendarEvents.value, 
+  events: calendarEvents.value,
   datesSet: handleDatesSet,
   eventClick: handleEventClick,
   eventContent: renderEvent,
@@ -211,8 +207,10 @@ const formatToISO = (dateStr: string) => {
 .calendar-widget {
   /* make calendar larger and centred */
   width: 40vw;
-  max-width: 1200px; /* optional cap */
-  margin: 0 auto; /* centre horizontally */
+  max-width: 1200px;
+  /* optional cap */
+  margin: 0 auto;
+  /* centre horizontally */
 }
 
 /*ensure grid lines via option-added class
@@ -232,22 +230,26 @@ const formatToISO = (dateStr: string) => {
 
 /* Fix Calendar Borders and Grid Lines */
 :deep(.fc-theme-bootstrap) {
-  border: 1px solid #dee2e6 !important; /* Adds the missing outer borders */
+  border: 1px solid #dee2e6 !important;
+  /* Adds the missing outer borders */
 }
 
 :deep(.fc-scrollgrid) {
   border: 1px solid #dee2e6 !important;
 }
+
 :deep(.fc-scroller) {
   overflow: visible !important;
   height: auto !important;
 }
+
 :deep(.fc-col-header) {
   margin-right: 0 !important;
   width: 100% !important;
 }
+
 /* Ensure vertical and horizontal grid lines are visible */
-:deep(.fc-td), 
+:deep(.fc-td),
 :deep(.fc-th),
 :deep(.fc-scrollgrid-sync-table td),
 :deep(.fc-col-header-cell) {
@@ -263,5 +265,4 @@ const formatToISO = (dateStr: string) => {
 :deep(.fc-scrollgrid-section-sticky > td) {
   border-right: none !important;
 }
-
 </style>

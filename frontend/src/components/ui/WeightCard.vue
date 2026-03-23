@@ -1,29 +1,33 @@
 <template>
-  <div class="weight-widget card shadow-sm">
-    <div class="top-section">
-      <div class="donut-container">
-        <!-- Chart.js Doughnut -->
-        <Doughnut :data="donutData" :options="donutOptions" />
-        <div class="donut-center">
-          <div class="current-weight">{{ currentWeight.toFixed(1) }}</div>
-          <div class="goal-weight">Goal: {{ goalWeight }}</div>
+  <BCard class="dashboard-card h-100 shadow-sm">
+    <BCardBody>
+      <div class="card-header-row">
+        <div class="card-title">
+          <IBiGraphDown />
+          Weight
         </div>
       </div>
-
-      <div class="info-panel">
-        <div class="current-big">{{ currentWeight.toFixed(1) }} <span class="unit">kg</span></div>
-        <div class="status-pill">Progress: -{{ progressKg }} kg</div>
-        <p class="summary-text">You've reached <strong>{{ progressPercent }}%</strong> of your goal!</p>
+      <div class="card-top">
+        <div class="donut-container">
+          <Doughnut :data="donutData" :options="donutOptions" />
+          <div class="donut-center">
+            <div class="current-value">{{ currentWeight.toFixed(1) }}</div>
+          </div>
+        </div>
+        <div class="card-visual"></div>
+        <div class="card-metrics">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="current-big">{{ currentWeight.toFixed(1) }} / {{ goalWeight }}<span class="unit"> kg</span></div>
+            <div class="status-pill">Progress: -{{ progressKg }} kg</div>
+          </div>
+          <p class="summary-text">You've reached <strong>{{ progressPercent }}%</strong> of your goal!</p>
+        </div>
       </div>
-    </div>
-
-    <div class="bottom-section">
-      <!-- Chart.js Line -->
-      <div class="ct-chart">
+      <div class="card-bottom">
         <Line :data="lineData" :options="lineOptions" :key="weightHistory.length" />
       </div>
-    </div>
-  </div>
+    </BCardBody>
+  </BCard>
 </template>
 
 <script setup>
@@ -45,7 +49,8 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcEleme
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const currentWeight = ref(78.5);
-const goalWeight = ref(80.0);
+const goalWeight = ref(80.0); //TODO Replace these with values from user preferences
+const startWeight = ref(86.0);
 const weightHistory = ref([]);
 const days = ref([]);
 const records = ref([]);
@@ -56,28 +61,33 @@ const initialWeight = computed(() => {
   return first ? first.weight / 1000 : 82.7;
 });
 
-const progressKg = computed(() => (initialWeight.value - currentWeight.value).toFixed(1));
+const progressKg = computed(() => (startWeight.value - currentWeight.value).toFixed(1));
 const progressPercent = computed(() => {
-  const totalToLose = initialWeight.value - goalWeight.value;
-  const lost = initialWeight.value - currentWeight.value;
+  const totalToLose = startWeight.value - goalWeight.value;
+  const lost = startWeight.value - currentWeight.value;
   return totalToLose > 0 ? Math.round((lost / totalToLose) * 100) : 0;
 });
 
-// --- Chart Configurations ---
 const donutData = computed(() => ({
   datasets: [{
     data: [progressPercent.value, Math.max(0, 100 - progressPercent.value)],
     backgroundColor: ['#4FACFE', '#f0f0f0'],
     borderWidth: 0,
-    cutout: '85%' // Matches your donutWidth: 15
+    cutout: '70%',
+    borderRadius: 6
   }]
 }));
 
 const donutOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: { legend: { display: false }, tooltip: { enabled: false } }
-};
+  rotation: -90,
+  circumference: 180,
+  plugins: {
+    legend: { display: false },
+    tooltip: { enabled: false }
+  }
+}
 
 const lineData = computed(() => ({
   labels: days.value,
@@ -87,13 +97,11 @@ const lineData = computed(() => ({
     borderColor: '#4FACFE',
     backgroundColor: 'rgba(79, 172, 254, 0.1)',
     borderWidth: 2,
-    // ✅ Remove the dots
     pointRadius: 0,
-    pointHitRadius: 10, // Keeps the tooltip functional when hovering near the line
-    // ✅ Smooth the line (0.4 is usually the "sweet spot" for a natural curve)
+    pointHitRadius: 10,
     tension: 0.4,
     fill: true,
-    spanGaps: true // Ensures the line stays connected over any missing data points
+    spanGaps: true
   }]
 }));
 
@@ -134,11 +142,6 @@ const lineOptions = {
     }
   }
 };
-
-
-
-
-// WeightCard.vue - Inside <script setup>
 
 async function loadData(start, end) {
   try {
@@ -203,39 +206,39 @@ onMounted(() => {
 
 .donut-container {
   position: relative;
-  width: 162px;
-  height: 162px;
-  flex-shrink: 0;
+  width: 120px;
+  height: 80px;
 }
 
 .donut-center {
   position: absolute;
-  top: 50%;
   left: 50%;
+  top: 65%;
   transform: translate(-50%, -50%);
-  text-align: center;
-  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.current-weight {
-  font-size: 30px;
-  font-weight: 600;
+.current-value {
+  font-size: 1.4rem;
+  font-weight: 700;
   line-height: 1;
 }
 
 .goal-weight {
   font-size: 14px;
   color: #888;
-  margin-top: 4px;
+  margin-top: 0px;
 }
 
 .info-panel {
-  margin-left: 40px;
+  flex: 1;
 }
 
 .current-big {
-  font-size: 34px;
-  font-weight: bold;
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
 .unit {
@@ -244,11 +247,11 @@ onMounted(() => {
 }
 
 .status-pill {
-  margin-top: 12px;
-  padding: 6px 16px;
-  border-radius: 999px;
   display: inline-block;
-  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  margin: 6px 0;
   background: rgba(79, 172, 254, 0.1);
   color: #4FACFE;
   font-weight: 600;
@@ -258,10 +261,6 @@ onMounted(() => {
   margin-top: 10px;
   color: #666;
   font-size: 14px;
-}
-
-.bottom-section {
-  margin-top: 40px;
 }
 
 .ct-chart {

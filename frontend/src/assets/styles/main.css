@@ -18,3 +18,40 @@ body,
 .text-purple {
   color: #8e44ad !important;
 }
+.dashboard-card {
+  border-radius: 12px;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.card-top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.card-visual {
+  width: 120px;
+  height: 80px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.card-metrics {
+  flex: 1;
+}
+
+.card-bottom {
+  margin-top: 12px;
+  height: 200px;
+}

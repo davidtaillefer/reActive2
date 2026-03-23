@@ -1,38 +1,42 @@
 <template>
-    <div class="weight-widget card shadow-sm">
-        <div class="top-section">
-            <div class="donut-container">
-                <!-- Chart.js Doughnut -->
-                <Doughnut :data="donutData" :options="donutOptions" />
-                <div class="donut-center">
-                    <div class="current-weight">{{ currentVo2.toFixed(1) }}</div>
+    <BCard class="dashboard-card h-100 shadow-sm">
+        <BCardBody>
+            <div class="card-header-row">
+                <div class="card-title">
+                    <IBiWind />
+                    VO2Max
+                </div>
+            </div>
+            <div class="card-top">
+                <div class="donut-container">
+                    <Doughnut :data="donutData" :options="donutOptions" />
+                    <div class="donut-center">
+                        <div class="current-value">{{ currentVo2.toFixed(1) }}</div>
+                    </div>
+                </div>
+                <div class="card-visual"></div>
+                <div class="card-metrics">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="current-big">{{ currentVo2.toFixed(1) }} <span class="unit"> ml/kg/min</span></div>
+                        <div class="status-pill">{{ fitnessLevel }}</div>
+                    </div>
+                </div>
+                <div v-if="trend !== null" class="small mt-2">
+                    <span :class="trend >= 0 ? 'text-success' : 'text-danger'">
+                        {{ trend >= 0 ? '▲' : '▼' }} {{ Math.abs(trend).toFixed(1) }}
+                    </span>
+                    <span class="text-muted"> last 30 days</span>
                 </div>
             </div>
 
-            <div class="info-panel">
-                <div class="current-big">{{ currentVo2.toFixed(1) }} <span class="unit">ml/kg/min</span></div>
-                <div class="status-pill">{{ fitnessLevel }}</div>
-                <p class="summary-text">
-                    You've reached <strong>{{ vo2Percent.toFixed(0) }}%</strong> of your goal
-                </p>
-            </div>
-            <div v-if="trend !== null" class="small mt-2">
-                <span :class="trend >= 0 ? 'text-success' : 'text-danger'">
-                    {{ trend >= 0 ? '▲' : '▼' }} {{ Math.abs(trend).toFixed(1) }}
-                </span>
-                <span class="text-muted"> last 30 days</span>
-            </div>
-        </div>
-
-        <div class="bottom-section">
-            <!-- Chart.js Line -->
-            <div style="height: 180px">
+            <div class="card-bottom">
                 <Line v-if="history.length > 0" :data="chartData" :options="chartOptions" :key="history.length" />
                 <div v-else class="text-center p-5 text-muted">No VO2 Max data found</div>
             </div>
-        </div>
-    </div>
+        </BCardBody>
+    </BCard>
 </template>
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Line, Doughnut } from 'vue-chartjs'
@@ -51,12 +55,7 @@ import { useStats } from '@/composables/useStats'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend)
 
-const vo2Goal = computed(() => {
-    const base = currentVo2.value || 40
-
-    // Simple progressive goal: +10%
-    return Math.round(base * 1.1)
-})
+const vo2Goal = 55
 
 const vo2Percent = computed(() => {
     return Math.min(100, (currentVo2.value / vo2Goal) * 100)
@@ -99,23 +98,24 @@ const currentVo2 = computed(() => {
     return lastValid || 0
 })
 
-// Fitness label
+// Fitness label - TODO read in from database table vased on user's age
 const fitnessLevel = computed(() => {
     const val = currentVo2.value
-    if (val >= 52) return 'Superior fitness level'
-    if (val >= 48) return 'Excellent fitness level'
-    if (val >= 44) return 'Good fitness level'
-    return 'Fair fitness level'
+    if (val >= 48.9) return 'Superior fitness'
+    if (val >= 43.4) return 'Excellent fitness'
+    if (val >= 39.2) return 'Good fitness'
+    if (val >= 35.6) return 'Fair fitness'
+    return 'Fair fitness'
 })
 
 const vo2Colour = computed(() => {
     const val = currentVo2.value
 
-    if (val >= 52) return '#198754' // green (elite)
-    if (val >= 48) return '#20c997' // teal
-    if (val >= 44) return '#0d6efd' // blue
-    if (val >= 40) return '#ffc107' // yellow
-    return '#dc3545' // red
+    if (val >= 48.9) return '#800080' 
+    if (val >= 43.4) return '#0d6efd'
+    if (val >= 39.2) return '198754' 
+    if (val >= 35.6) return '#ffc107' 
+    return '#dc3545'
 })
 
 const donutData = computed(() => {
@@ -127,7 +127,7 @@ const donutData = computed(() => {
                 data: [val, vo2Goal - val],
                 backgroundColor: [vo2Colour.value, '#e9ecef'],
                 borderWidth: 0,
-                cutout: '82%',
+                cutout: '70%',
                 borderRadius: 6 // 👈 rounded ends (nice touch)
             }
         ]
@@ -137,8 +137,8 @@ const donutData = computed(() => {
 const donutOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    rotation: -90, // start at top
-    circumference: 180, // 👈 semi-circle (Garmin style)
+    rotation: -90,
+    circumference: 180,
     plugins: {
         legend: { display: false },
         tooltip: { enabled: false }
@@ -182,7 +182,7 @@ const chartOptions = {
 onMounted(() => {
     const end = new Date()
     const start = new Date()
-    start.setDate(end.getDate() - 30)
+    start.setDate(end.getDate() - 26*7)
 
     fetchStats({
         startDate: start,
@@ -207,20 +207,24 @@ onMounted(() => {
 
 .donut-container {
     position: relative;
-    width: 160px;
-    height: 100px;
-    /* smaller for semi-circle */
-    margin: 0 auto;
+    width: 120px;
+    height: 80px;
 }
 
 .donut-center {
     position: absolute;
-    inset: 0;
+    left: 50%;
+    top: 65%;
+    transform: translate(-50%, -50%);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    pointer-events: none;
+}
+
+.current-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
 }
 
 .current-weight {
@@ -241,16 +245,16 @@ onMounted(() => {
 .goal-weight {
     font-size: 14px;
     color: #888;
-    margin-top: 4px;
+    margin-top: 0px;
 }
 
 .info-panel {
-    margin-left: 40px;
+    flex: 1;
 }
 
 .current-big {
-    font-size: 34px;
-    font-weight: bold;
+    font-size: 1.2rem;
+    font-weight: 600;
 }
 
 .unit {
@@ -259,11 +263,11 @@ onMounted(() => {
 }
 
 .status-pill {
-    margin-top: 12px;
-    padding: 6px 16px;
-    border-radius: 999px;
     display: inline-block;
-    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    margin: 6px 0;
     background: rgba(79, 172, 254, 0.1);
     color: #4FACFE;
     font-weight: 600;

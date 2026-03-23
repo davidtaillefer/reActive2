@@ -3,26 +3,26 @@
     <BCardBody>
       <div class="card-header-row">
         <div class="card-title">
-          <IBiFire />
-          Weekly Intensity Minutes
+          <IBiBarChartSteps />
+          Stairs
         </div>
       </div>
       <div class="card-top">
         <div class="donut-container">
-          <Doughnut v-if="currentWeek.weighted > 0" :data="donutData" :options="donutOptions" />
+          <Doughnut v-if="today.stairs > 0" :data="donutData" :options="donutOptions" />
           <div class="donut-center">
-            <div class="current-value">{{ currentWeek.weighted }}</div>
+            <div class="current-value">{{ today.stairs }}</div>
           </div>
         </div>
       <div class="card-visual"></div>
       <div class="card-metrics">
           <div class="d-flex align-items-center gap-2 flex-wrap">
-            <div class="current-big">{{ currentWeek.weighted }} / {{ GOAL_MINUTES }}</div>
+            <div class="current-big">{{ today.stairs }} / {{ GOAL_STAIRS }}</div>
             <div class="status-pill" :class="statusClass">{{ statusText }}</div>
           </div>
           <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
             <div class="summary-text text-muted">
-              {{ percent.toFixed(0) }}% of weekly goal
+              {{ percent.toFixed(0) }}% of daily goal
             </div>
             <div v-if="streak > 0" class="text-success small">
               🔥 {{ streak }} wk streak
@@ -31,11 +31,9 @@
         </div>
       </div>
     <div class="card-bottom">
-        <Bar v-if="weeklyData.length" :data="intensityData" :options="barChartOptions" :plugins="[goalLinePlugin]" />
-        <div v-else class="text-muted text-center p-4">
-          No intensity data available
+<Bar :data="stairsData" :options="barChartOptions" :plugins="[goalLinePlugin]" />
         </div>
-      </div>
+    
 
     </BCardBody>
   </BCard>
@@ -44,6 +42,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { Bar, Doughnut } from 'vue-chartjs'
+import 'chartjs-adapter-date-fns'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -51,76 +50,49 @@ import {
   BarElement,
   ArcElement,
   Tooltip,
-  Legend
+  Legend, 
+  TimeScale
 } from 'chart.js'
 import { useStats } from '@/composables/useStats'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend)
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, TimeScale)
 
 const { stats, loading, error, fetchStats } = useStats()
 
-const GOAL_MINUTES = 150
-const WEEKS = 26
+const GOAL_STAIRS = 10
+const DAYS = 26*31
 
 onMounted(() => {
   const end = new Date()
   const start = new Date()
-  start.setDate(end.getDate() - WEEKS * 7)
+  start.setDate(end.getDate() - DAYS * 7)
 
   fetchStats({ startDate: start, endDate: end })
 })
 
-const getWeekKey = (date: Date) => {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  d.setDate(d.getDate() + 4 - (d.getDay() || 7))
-
-  const yearStart = new Date(d.getFullYear(), 0, 1)
-  const weekNo = Math.ceil(((+d - +yearStart) / 86400000 + 1) / 7)
-
-  return `${d.getFullYear()}-W${weekNo}`
-}
-
-const weeklyData = computed(() => {
+const dailyData = computed(() => {
   if (!stats.value) return []
 
-  const map: Record<string, any> = {}
-
-  stats.value.forEach(r => {
-    const d = new Date(r.date)
-    const key = getWeekKey(d)
-
-    if (!map[key]) {
-      map[key] = { moderate: 0, vigorous: 0, weighted: 0, date: d }
-    }
-
-    const moderate = r.moderate_intensity || 0
-    const vigorous = r.vigorous_intensity || 0
-
-    map[key].moderate += moderate
-    map[key].vigorous += vigorous
-    map[key].weighted += moderate + (vigorous * 2)
-  })
-
-  return Object.values(map)
+  return stats.value
+    .map(r => ({
+      date: new Date(r.date),
+      stairs: r.floors_ascended || 0
+    }))
     .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .slice(-WEEKS)
+    .slice(-DAYS)
 })
 
-const currentWeek = computed(() => {
-  return weeklyData.value.at(-1) || { weighted: 0, moderate: 0, vigorous: 0 }
+const today = computed(() => {
+  return dailyData.value.at(-1) || { stairs: 0 }
 })
 
 /**
  * % progress
  */
 const percent = computed(() =>
-  Math.min(100, (currentWeek.value.weighted / GOAL_MINUTES) * 100)
+  Math.min(100, (today.value.stairs / GOAL_STAIRS) * 100)
 )
 
-/**
- * Status
- */
 const statusText = computed(() => {
   if (percent.value >= 100) return 'Goal Achieved'
   if (percent.value >= 75) return 'On Track'
@@ -133,34 +105,28 @@ const statusClass = computed(() => {
   return 'bg-danger text-white'
 })
 
-/**
- * Streak calculation
- */
 const streak = computed(() => {
   let count = 0
 
-  for (let i = weeklyData.value.length - 1; i >= 0; i--) {
-    if (weeklyData.value[i].weighted >= GOAL_MINUTES) count++
+  for (let i = dailyData.value.length - 1; i >= 0; i--) {
+    if (dailyData.value[i].stairs >= GOAL_STAIRS) count++
     else break
   }
 
   return count
 })
 
-/**
- * Doughnut
- */
 const donutData = computed(() => ({
   datasets: [
     {
       data: [
-        Math.min(currentWeek.value.weighted, GOAL_MINUTES),
-        Math.max(0, GOAL_MINUTES - currentWeek.value.weighted)
+        Math.min(today.value.stairs, GOAL_STAIRS),
+        Math.max(0, GOAL_STAIRS - today.value.stairs)
       ],
       backgroundColor: [
         percent.value >= 100 ? '#198754' :
-          percent.value >= 75 ? '#ffc107' :
-            '#dc3545',
+        percent.value >= 75 ? '#ffc107' :
+        '#dc3545',
         '#e9ecef'
       ],
       borderWidth: 0,
@@ -181,38 +147,25 @@ const donutOptions = {
   }
 }
 
-/**
- * Chart
- */
-const intensityData = computed(() => {
-  let lastMonth = ''
+const stairsData = computed(() => ({
+  datasets: [
+    {
+      label: 'stairs',
+      data: dailyData.value.map(d => ({
+        x: d.date,
+        y: d.stairs
+      })),
 
-  const labels = weeklyData.value.map(w => {
-    const month = new Intl.DateTimeFormat('en-CA', {
-      month: 'short'
-    }).format(w.date)
+      backgroundColor: dailyData.value.map(d => {
+        if (d.stairs >= GOAL_STAIRS) return '#198754'
+        if (d.stairs >= GOAL_STAIRS * 0.75) return '#ffc107'
+        return '#0d6efd'
+      }),
 
-    if (month === lastMonth) return ''
-    lastMonth = month
-    return month
-  })
-
-  return {
-    labels,
-    datasets: [
-      {
-        label: 'Vigorous (×2)',
-        data: weeklyData.value.map(w => w.vigorous * 2),
-        backgroundColor: '#dc3545'
-      },
-      {
-        label: 'Moderate',
-        data: weeklyData.value.map(w => w.moderate),
-        backgroundColor: '#ffc107'
-      }
-    ]
-  }
-})
+      borderRadius: 6
+    }
+  ]
+}))
 
 const goalLinePlugin = {
   id: 'goalLine',
@@ -220,7 +173,7 @@ const goalLinePlugin = {
     const { ctx, chartArea, scales } = chart
     if (!chartArea) return
 
-    const y = scales.y.getPixelForValue(GOAL_MINUTES)
+    const y = scales.y.getPixelForValue(GOAL_STAIRS)
 
     ctx.save()
     ctx.strokeStyle = '#198754'
@@ -237,26 +190,36 @@ const barChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: {
-      position: 'top' as const
-    }
+    legend: { display: false }
   },
   scales: {
     x: {
-      stacked: true,
-      grid: { display: false },
-      ticks: {
-        maxRotation: 0,
-        minRotation: 0,
-        autoSkip: false
-      }
+      type: 'time',
+      bounds: 'data',
+      min: dailyData.value[0]?.date, 
+      max: dailyData.value.at(-1)?.date,
+
+      time: {
+        unit: 'month',
+        tooltipFormat: 'MMM d',
+        displayFormats: {
+          month: 'MMM'
+        }
+      },
+
+      grid: { display: false }
     },
     y: {
-      stacked: true,
       beginAtZero: true
     }
   }
 }
+
+hoverBackgroundColor: dailyData.value.map(d => {
+  if (d.stairs >= GOAL_STAIRS) return '#157347'
+  if (d.stairs >= GOAL_STAIRS * 0.75) return '#e0a800'
+  return '#0b5ed7'
+})
 </script>
 
 <style scoped>
