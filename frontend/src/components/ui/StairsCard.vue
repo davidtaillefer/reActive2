@@ -25,7 +25,7 @@
               {{ percent.toFixed(0) }}% of daily goal
             </div>
             <div v-if="streak > 0" class="text-success small">
-              🔥 {{ streak }} wk streak
+              🔥 {{ streak }} day streak
             </div>
           </div>
         </div>

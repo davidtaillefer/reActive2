@@ -5,7 +5,7 @@
         <IBiSpeedometer2 class="text-success fs-3" />
         Training Status
       </BCardTitle>
-      <div class="text-center py-4">
+      <div class="text-center">
         <div v-if="loading">
           <BSpinner />
           <div class="mt-2 text-muted">Loading...</div>

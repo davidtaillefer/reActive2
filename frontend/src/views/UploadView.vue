@@ -1,5 +1,5 @@
 <template>
-  <div class="h-100 bg-light overflow-auto">
+  <div class=" bg-light overflow-auto">
     <div class="container py-4" style="max-width: 900px;">
       <div class="card shadow-sm">
         <div class="card-body p-4">
@@ -8,6 +8,7 @@
             <IBiupload class="me-2 text-purple fs-4" />
             <h2 class="mb-0">Upload Activity</h2>
           </div>
+      <div v-if="!activities.length > 0" class="mt-4">
 
           <!-- Upload Area -->
           <div :class="['upload-zone', dragActive ? 'drag-active' : '']" @dragenter="handleDrag" @dragleave="handleDrag"
@@ -52,7 +53,7 @@
             </div>
           </div>
 
-
+      </div>
         </div>
 
       </div>
