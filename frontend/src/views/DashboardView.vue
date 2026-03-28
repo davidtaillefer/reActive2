@@ -9,7 +9,13 @@
         </h4>
         <div class="overflow-auto" style="max-height: calc(100vh - 150px)">
           <div class="d-flex flex-column gap-3">
-            <BCard v-for="workout in recentWorkouts" :key="workout.id" class="mb-3 shadow-sm border-0">
+            <BCard 
+              v-for="workout in recentWorkouts" 
+              :key="workout.id" 
+              class="mb-3 shadow-sm border-0 workout-card"
+              @click="openWorkout(workout.id)"
+              style="cursor: pointer;"
+              >
               <BCardBody>
                 <BCardTitle class="h6 fw-bold mb-1">{{ workout.name }}</BCardTitle>
                 <p class="text-muted small mb-3">{{ workout.date }}</p>
@@ -103,7 +109,7 @@
               <BCard class="h-100">
                 <BCardBody>
                   <BCardTitle>
-                    <i class="bi bi-moon-stars-fill me-2"></i>
+                    <IBiMoonStarsFill/>
                     Nightly Sleep Stages
                   </BCardTitle>
                   <div class="mb-3">
@@ -160,6 +166,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { BContainer, BRow, BCol, BCard, BCardBody, BCardTitle, BProgress, BProgressBar } from 'bootstrap-vue-next';
 import { Line, Bar } from 'vue-chartjs';
 import 'leaflet/dist/leaflet.css';
@@ -194,6 +201,8 @@ ChartJS.register(
   Legend,
   Filler
 );
+
+const router = useRouter()
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const recentWorkouts = ref([])
@@ -261,6 +270,13 @@ const fetchRecentWorkouts = async (count: number = 10) => {
 onMounted(() => {
   fetchRecentWorkouts(10)
 })
+
+const openWorkout = (id: number) => {
+  router.push({
+    name: 'activity',
+    params: { id }
+  })
+}
 
 const hasGpsData = (hrmData: any) => {
   // Access the Track object from your specific HRM data structure
@@ -358,3 +374,14 @@ const barChartOptions = {
   },
 };
 </script>
+
+<style scoped>
+.workout-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.workout-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+</style>

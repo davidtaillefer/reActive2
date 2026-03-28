@@ -28,8 +28,9 @@ def readhrm(hrmfile):
         base_path = base_path + 'tcx/' #'/srv/md0/data/gps/tcx/'
         with open(base_path+hrmfile) as xml_file:
             data_dict = xmltodict.parse(xml_file.read())
-            res=jsonify(data_dict)
-            res.status_code = 200
+            res = tcx_to_fit_like(data_dict)
+            # res=jsonify(data_dict)
+            # res.status_code = 200
             return res
     elif file_extension == '.fit':
         base_path = base_path + 'fit/'
@@ -377,3 +378,211 @@ def readhrm(hrmfile):
         res = {}
         # res.status_code = 404
         return res
+
+def isoformat(ts):
+    if not ts:
+        return None
+    return datetime.fromisoformat(ts.replace("Z", "+00:00")).isoformat()
+
+def safe_float(val):
+    try:
+        return float(val)
+    except:
+        return None
+
+def safe_int(val):
+    try:
+        return int(float(val))
+    except:
+        return None
+
+
+def tcx_to_fit_like(tcx):
+    activity = tcx["TrainingCenterDatabase"]["Activities"]["Activity"]
+
+    laps = activity.get("Lap", [])
+    if not isinstance(laps, list):
+        laps = [laps]
+
+    total_distance = 0.0
+    total_time = 0.0
+    total_calories = 0
+    max_speed = 0.0
+
+    track_index = 1
+    lap_index = 0
+
+    track_out = {}
+    lap_out = {}
+
+    first_point = None
+    last_point = None
+    prev_point = None
+
+    for lap in laps:
+        lap_distance = safe_float(lap.get("DistanceMeters"))
+        lap_time = safe_float(lap.get("TotalTimeSeconds"))
+        lap_calories = safe_int(lap.get("Calories"))
+        lap_max_speed = safe_float(lap.get("MaximumSpeed"))
+
+        total_distance += lap_distance or 0
+        total_time += lap_time or 0
+        total_calories += lap_calories or 0
+        max_speed = max(max_speed, lap_max_speed or 0)
+
+        lap_out[lap_index] = {
+            "start_time": isoformat(lap.get("@StartTime")),
+            "total_distance": lap_distance,
+            "total_timer_time": lap_time,
+            "total_calories": lap_calories,
+            "max_speed": lap_max_speed
+        }
+        lap_index += 1
+
+        track = lap.get("Track", {})
+        points = track.get("Trackpoint", [])
+
+        if not isinstance(points, list):
+            points = [points]
+
+        max_hr = 195  # configurable later
+
+        hr_values = []
+        zone_time = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
+        for p in points:
+            lat = safe_float(p.get("Position", {}).get("LatitudeDegrees"))
+            lon = safe_float(p.get("Position", {}).get("LongitudeDegrees"))
+            ts = isoformat(p.get("Time"))
+            dist = safe_float(p.get("DistanceMeters"))
+            alt = safe_float(p.get("AltitudeMeters"))
+
+            hr = extract_hr(p)
+
+            if hr is not None:
+                hr_values.append(hr)
+
+            if prev_point and hr is not None:
+                dt = (
+                    datetime.fromisoformat(ts) -
+                    datetime.fromisoformat(prev_point["timestamp"])
+                ).total_seconds()
+
+                zone = get_hr_zone(hr, max_hr)
+                if zone:
+                    zone_time[zone] += dt
+
+            speed = None
+            if prev_point and ts and prev_point["timestamp"]:
+                dt = (
+                    datetime.fromisoformat(ts) -
+                    datetime.fromisoformat(prev_point["timestamp"])
+                ).total_seconds()
+
+                if dt > 0 and dist is not None and prev_point["distance"] is not None:
+                    speed = (dist - prev_point["distance"]) / dt
+
+            point = {
+                "timestamp": ts,
+                "position_lat": lat,
+                "position_long": lon,
+                "distance": dist,
+                "enhanced_altitude": alt,
+                "enhanced_speed": speed,
+                "heart_rate": hr
+            }
+
+            if not first_point:
+                first_point = point
+            last_point = point
+
+            track_out[track_index] = point
+            track_index += 1
+
+            prev_point = point
+
+    avg_hr = sum(hr_values) / len(hr_values) if hr_values else None
+    max_hr_observed = max(hr_values) if hr_values else None
+
+    zones = {
+        "hr_calc_type": "percent_max_hr",
+        "max_heart_rate": max_hr,
+        "zones": {
+            "z1": zone_time[1],
+            "z2": zone_time[2],
+            "z3": zone_time[3],
+            "z4": zone_time[4],
+            "z5": zone_time[5],
+        }
+    }
+
+    avg_speed = total_distance / total_time if total_time > 0 else None
+
+    activity_out = {
+        "device": activity.get("Creator", {}).get("Name"),
+        "sport": map_sport(activity.get("@Sport")),
+        "start_time": isoformat(activity.get("Id")),
+        "timestamp": isoformat(activity.get("Id")),
+
+        "total_distance": total_distance,
+        "total_timer_time": total_time,
+        "total_calories": total_calories,
+
+        "enhanced_avg_speed": avg_speed,
+        "enhanced_max_speed": max_speed,
+
+        "avg_heart_rate": avg_hr,
+        "max_heart_rate": max_hr_observed,
+        "Zones": zones,
+
+        "start_position_lat": first_point["position_lat"] if first_point else None,
+        "start_position_long": first_point["position_long"] if first_point else None,
+        "end_position_lat": last_point["position_lat"] if last_point else None,
+        "end_position_long": last_point["position_long"] if last_point else None,
+
+        "Lap": lap_out,
+        "Track": track_out,
+
+        # Missing in TCX
+        "Zones": None,
+        "training_load_peak": None,
+        "total_training_effect": None,
+        "total_anaerobic_training_effect": None
+    }
+
+    return {
+        "Activities": activity_out
+    }
+
+def map_sport(tcx_sport):
+    SPORT_MAP = {
+        "Running": "running",
+        "Biking": "cycling",
+        "Cycling": "cycling",
+        "Other": "generic",
+        "Hiking": "hiking",
+        "Walking": "walking"
+    }
+    return SPORT_MAP.get(tcx_sport, tcx_sport.lower())
+
+
+def extract_hr(p):
+    return safe_int(p.get("HeartRateBpm", {}).get("Value"))
+
+
+def get_hr_zone(hr, max_hr):
+    if hr is None:
+        return None
+
+    pct = hr / max_hr
+
+    if pct < 0.6:
+        return 1
+    elif pct < 0.7:
+        return 2
+    elif pct < 0.8:
+        return 3
+    elif pct < 0.9:
+        return 4
+    else:
+        return 5

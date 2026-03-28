@@ -154,7 +154,6 @@ const handleEventClick = (clickInfo: any) => {
     router.push({
       name: 'activity',
       params: { id: activity.id },
-      state: { activity },
     })
   }
 }

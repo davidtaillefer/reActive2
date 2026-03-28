@@ -366,8 +366,6 @@ def call_api(api, date):
         print(f"⚠️ failed: {error_msg}")
         return False, error_msg
 
-
-
 def format_timedelta(td):
     minutes, seconds = divmod(td.seconds + td.days * 86400, 60)
     hours, minutes = divmod(minutes, 60)
@@ -567,48 +565,3 @@ def init_api(email: str | None = None, password: str | None = None) -> Garmin | 
             return None
 
 
-# def main():
-    
-#     api_instance = init_api(config.email, config.password)
-
-#     try:
-#         if api_instance:
-#             try:
-#                 summary = api_instance.get_user_summary(config.today.isoformat())
-#                 success, error = call_api(api_instance, config.today.isoformat())
-                
-#                 steps = summary.get("totalSteps") or 0
-#                 calories = summary.get("totalKilocalories") or 0
-
-#                 # Build stats string with hydration if available
-#                 stats_parts = [f"{steps:,} steps", f"{calories} kcal"]
-
-#                 stats_string = " | ".join(stats_parts)
-#                 print(f"\n📊 Your Stats Today: {stats_string}")
-
-#                 if steps < 5000:
-#                     print("🐌 Time to get those legs moving!")
-#                 elif steps > 7500:
-#                     print("🏃‍♂️ You're crushing it today!")
-#                 else:
-#                     print("👍 Nice progress! Keep it up!")
-#                 #formatted_output = json.dumps(summary, indent=2, default=str)
-#                 #print(formatted_output)
-#                 #formatted_output = json.dumps(training, indent=2, default=str)
-#                 #print(formatted_output)
-#                 print(health_data)
-#                 print(stats_data)
-
-
-#             except Exception as e:
-#                 print(
-#                     f"Unable to fetch stats for display: {e}"
-#                 )  # Silently skip if stats can't be fetched
-
-        
-#     except Exception as e:
-#         print(f"Unexpected error: {e}")
-
-
-# if __name__ == "__main__":
-#     main()

@@ -1,6 +1,6 @@
 <template>
   <BContainer fluid class="p-3">
-    <BRow class="g-3">
+   <BRow class="g-3">
       <BCol>
         <ActivityDetails v-if="activity && Object.keys(activity).length" :activity="activity" :icon-url="iconUrl"
           :sport-name="sportName" />
@@ -24,26 +24,19 @@
       <!-- Metrics Section (1/3 width on lg+) -->
       <BCol lg="4" class="d-flex flex-column h-100">
         <div class="flex-grow-1 overflow-auto d-flex flex-column gap-3 pe-2">
-          <HeartRateCard v-if="metricsAvailability.heartRate" :activity="activity"
-            :hrmData="hrmData" />
-          <SpeedCard v-if="metricsAvailability.speed" :activity="activity"
-            :hrmData="hrmData" />
-          <ElevationCard v-if="metricsAvailability.elevation" :activity="activity"
-            :hrmData="hrmData" />
-          <CadenceCard v-if="metricsAvailability.cadence" :activity="activity"
-            :hrmData="hrmData" />
-          <PowerCard v-if="metricsAvailability.power" :activity="activity"
-            :hrmData="hrmData" />
+          <HeartRateCard v-if="metricsAvailability.heartRate" :activity="activity" :hrmData="hrmData" />
+          <SpeedCard v-if="metricsAvailability.speed" :activity="activity" :hrmData="hrmData" />
+          <ElevationCard v-if="metricsAvailability.elevation" :activity="activity" :hrmData="hrmData" />
+          <CadenceCard v-if="metricsAvailability.cadence" :activity="activity" :hrmData="hrmData" />
+          <PowerCard v-if="metricsAvailability.power" :activity="activity" :hrmData="hrmData" />
           <HRZonesCard :hrmData="hrmData[0]" />
           <PowerZonesCard v-if="metricsAvailability.power" :hrmData="hrmData[0]" />
           <BRow class="mt-3">
-            <!-- Aerobic (ATE) -->
             <BCol md="6">
               <TrainingEffectCard title="Aerobic TE" :score="Number(activity.ate)" :benefit="activity.intensity"
                 icon="i-bi-wind" icon-color="text-info" />
             </BCol>
 
-            <!-- Anaerobic (ANTE) -->
             <BCol md="6">
               <TrainingEffectCard title="Anaerobic TE" :score="Number(activity.ante)" icon="i-bi-lightning-fill"
                 icon-color="text-warning" />
@@ -73,7 +66,6 @@
             <BCol cols="auto" class="mb-2 mb-lg-0">
               <div class="label">HRM File:</div>
               <div class="value">{{ activity.hrmfile || '-' }}</div>
-              <p>{{metricsAvailability}}</p>
             </BCol>
           </BCardBody>
         </BCard>
@@ -83,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, toRaw } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { BContainer, BRow, BCol, BCard, BCardBody } from 'bootstrap-vue-next'
@@ -95,10 +87,18 @@ import SpeedCard from '@/components/ui/SpeedCard.vue'
 import ElevationCard from '@/components/ui/ElevationCard.vue'
 import CadenceCard from '@/components/ui/CadenceCard.vue'
 import PowerCard from '@/components/ui/PowerCard.vue'
+import ActivityLapsTable from '@/components/ui/ActivityLapsTable.vue'
+import ActivitySetsTable from '@/components/ui/ActivitySetsTable.vue'
+
+
 
 const route = useRoute()
 const id = route.params.id
-const activity = ref(route.state?.activity || {})
+const activity = ref(
+  route.state?.activity
+    ? JSON.parse(JSON.stringify(route.state.activity))
+    : {}
+);
 const iconUrl = ref('')
 const sportName = ref('')
 const hrmData = ref([]) // Initialize as an array to hold multiple HRM datasets if needed
@@ -147,7 +147,7 @@ onMounted(async () => {
       const res = await fetch(apiBaseUrl + `hrm/${hrmfile.value}`)
       if (res.ok) {
         const data = await res.json()
-        hrmData.value.push(data)
+        hrmData.value = [JSON.parse(JSON.stringify(data))]
       } else {
         console.error('failed to fetch HRM data', res.status)
       }

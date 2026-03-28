@@ -6,7 +6,7 @@
           <!-- Header -->
           <div class="d-flex align-items-center justify-content-between mb-4">
             <div class="d-flex align-items-center gap-3">
-              <i class="bi bi-tree text-success fs-4"></i>
+              <IBiTree />
               <h2 class="mb-0">Seasonal Activity</h2>
             </div>
             <div class="small text-muted">
@@ -26,7 +26,12 @@
                 }">
                   <BCardBody>
                     <div class="d-flex align-items-center gap-2 mb-3">
-                      <i :class="`bi bi-${season.icon} fs-5`"></i>
+                      <div class="fs-4">
+                        <IBiSnow v-if="season.icon === 'IBiSnow'" />
+                        <IBiFlower1 v-if="season.icon === 'IBiFlower1'" />
+                        <IBiBrightnessHigh v-else-if="season.icon === 'IBiSun'" />
+                        <IBiTree v-else-if="season.icon === 'IBiTree'" />
+                      </div>
                       <h5 class="mb-0 fw-bold">{{ season.season }}</h5>
                     </div>
                     <div class="small">
@@ -65,16 +70,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, resolveComponent } from 'vue'
 import { BContainer, BCard, BCardBody, BRow, BCol, BFormSelect } from 'bootstrap-vue-next';
 import RouteMap from '@/components/ui/RouteMap.vue'
+
+//import { IBiFlower1, IBiSun, IBiTree } from 'bootstrap-icons-vue'
 
 const activities = ref([])
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const hrmData = ref([])
 const startDate = ref('2025-12-01')
 const endDate = ref('2026-08-31')
-const hrmfile = ref('') 
+//const hrmfile = ref('')
 
 const formatDuration = (totalSeconds: number) => {
   const h = Math.floor(totalSeconds / 3600);
@@ -83,22 +90,11 @@ const formatDuration = (totalSeconds: number) => {
 };
 
 const sumField = (arr: any[], field: string): number => {
-  console.log(`--- Calculating Total for ${field} ---`);
-  
-  // This prints the raw data in a table format so you can see the 'distance' column values
-  console.table(arr, [field]);
-
   const total = arr.reduce((acc, obj, index) => {
     const value = parseFloat(obj[field]) || 0;
     const newTotal = acc + value;
-    
-    // Log each step to see where it might be going wrong
-    console.log(`Step ${index + 1}: Adding ${value} to ${acc} = ${newTotal}`);
-    
     return newTotal;
   }, 0);
-
-  console.log(`Final Total: ${total}`);
   return total;
 };
 
@@ -111,10 +107,10 @@ const seasonalStats = computed(() => {
 
   const winterData = {
     season: 'Winter',
-    icon: 'snow',
+    icon: 'IBiSnow',
     color: 'blue' as const,
     activities: activities.value.length,
-    totalDistance: `${(winterDistMeters / 1000).toFixed(1)} km`,
+    totalDistance: `${(winterDistMeters).toFixed(1)} km`,
     totalTime: formatDuration(winterTimeSeconds),
   };
 
@@ -122,9 +118,9 @@ const seasonalStats = computed(() => {
 });
 
 const otherSeasons = ref([
-  { season: 'Spring', icon: 'flower1', color: 'green', activities: 0, totalDistance: '0 km', totalTime: '0h 0m' },
-  { season: 'Summer', icon: 'brightness-high', color: 'orange', activities: 0, totalDistance: '0 km', totalTime: '0h 0m' },
-  { season: 'Fall', icon: 'tree', color: 'amber', activities: 0, totalDistance: '0 km', totalTime: '0h 0m' },
+  { season: 'Spring', icon: 'IBiFlower1', color: 'green', activities: 0, totalDistance: '0 km', totalTime: '0h 0m' },
+  { season: 'Summer', icon: 'IBiSun', color: 'orange', activities: 0, totalDistance: '0 km', totalTime: '0h 0m' },
+  { season: 'Fall', icon: 'IBiTree', color: 'amber', activities: 0, totalDistance: '0 km', totalTime: '0h 0m' },
 ]);
 
 async function loadOtherSeasons() {
@@ -133,9 +129,9 @@ async function loadOtherSeasons() {
 
   // Define the periods for Cycling (Sport ID 2)
   const periods = [
-    { name: 'Spring', start: `${year+1}-05-01`, end: `${year+1}-06-30`, icon: 'flower1', color: 'green' },
-    { name: 'Summer', start: `${year+1}-07-01`, end: `${year+1}-08-31`, icon: 'brightness-high', color: 'orange' },
-    { name: 'Fall', start: `${year+1}-09-01`, end: `${year+1}-10-31`, icon: 'tree', color: 'amber' },
+    { name: 'Spring', start: `${year + 1}-05-01`, end: `${year + 1}-06-30`, icon: 'IBiFlower1', color: 'green' },
+    { name: 'Summer', start: `${year + 1}-07-01`, end: `${year + 1}-08-31`, icon: 'IBiSun', color: 'orange' },
+    { name: 'Fall', start: `${year + 1}-09-01`, end: `${year + 1}-10-31`, icon: 'IBiTree', color: 'amber' },
   ];
 
   const results = [];
@@ -144,7 +140,7 @@ async function loadOtherSeasons() {
     try {
       const res = await fetch(`${apiBaseUrl}activities?sport=2&start=${p.start}&end=${p.end}`);
       const data = await res.json();
-      
+
       const distKm = sumField(data, 'distance') / 1000;
       const timeSec = sumField(data, 'duration');
 
@@ -160,7 +156,7 @@ async function loadOtherSeasons() {
       console.error(`Error loading ${p.name}:`, err);
     }
   }
-  
+
   // Update the ref once with all new data to maintain reactivity
   otherSeasons.value = results;
 }
@@ -186,9 +182,9 @@ const generateSkiSeasons = () => {
   for (let i = 0; i < 10; i++) {
     const start = latestSeasonStart - i;
     const end = start + 1;
-    options.push({ 
-      value: `${start}-${end}`, 
-      text: `Season ${start}-${end}` 
+    options.push({
+      value: `${start}-${end}`,
+      text: `Season ${start}-${end}`
     });
   }
   return options;
@@ -203,26 +199,24 @@ async function loadActivities() {
     const url = `${apiBaseUrl}activities?sport=5&start=${startDate.value}&end=${endDate.value}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch');
-    
+
     const data = await res.json();
     activities.value = data;
-    
+
     // Ensure hrmData is updated for the RouteMap component
-    hrmData.value = data; 
-    
-    console.log(`Loaded ${data.length} activities for ${selectedYear.value}`);
+    hrmData.value = data;
+
   } catch (err) {
     console.error("Error loading seasonal activities:", err);
   }
 }
 
 onMounted(() => {
-  console.log('Seasonal Map View Mounted');
 });
 
 async function fetchRouteData() {
   hrmData.value = []; // Clear existing map routes
-  
+
   for (const activity of activities.value) {
     const filename = activity.hrmfile || '';
     if (!filename) continue;
@@ -251,7 +245,7 @@ watch(selectedYear, async (newYear) => {
   const [startYear, endYear] = newYear.split('-');
   startDate.value = `${startYear}-11-01`;
   endDate.value = `${endYear}-04-30`;
-  
+
   await loadActivities(); // Gets the list
   await fetchRouteData();  // Gets the map routes
   await loadOtherSeasons();

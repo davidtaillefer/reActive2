@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: flask_backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /mnt/data/gps:/data/gps
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3306
+      - DB_NAME=exercise
+      - DB_USER=reactive
+      - DB_PASSWORD=meach1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build: ./frontend
+    container_name: vue_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

@@ -8,12 +8,11 @@
     icon="i-bi-heart-fill" 
     icon-color="text-danger"
   >
-    <Line :data="chartData" :options="chartOptions" />
-  </MetricCard>
+<Line :data="JSON.parse(JSON.stringify(chartData))" :options="chartOptions" />  </MetricCard>
 </template>
 
 <script setup lang="ts">
-import { ref, computed} from 'vue'
+import { ref, computed, toRaw} from 'vue'
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import MetricCard from './MetricCard.vue';
@@ -28,7 +27,12 @@ const props = defineProps({
   },
   hrmData: {type: Array, required: true},
 });
-const value1 = ref(props.activity?.heartrate.toFixed(0) || 'N/A');
+
+const value1 = ref(
+  props.activity?.heartrate != null
+    ? Number(props.activity.heartrate).toFixed(0)
+    : 'N/A'
+);
 const value2 = ref(props.hrmData?.[0]?.Activities?.max_heart_rate?.toFixed(0)  || 'N/A');
 
 const chartData = computed(() => {

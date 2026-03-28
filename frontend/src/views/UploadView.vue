@@ -1,117 +1,134 @@
 <template>
-  <div class=" bg-light overflow-auto">
+  <div class="bg-light">
+
+    <!-- Upload Section -->
     <div class="container py-4" style="max-width: 900px;">
       <div class="card shadow-sm">
         <div class="card-body p-4">
+
           <!-- Header -->
           <div class="d-flex align-items-center gap-3 mb-4">
-            <IBiupload class="me-2 text-purple fs-4" />
+            <IBiupload class="text-purple fs-4" />
             <h2 class="mb-0">Upload Activity</h2>
           </div>
-      <div v-if="!activities.length > 0" class="mt-4">
 
-          <!-- Upload Area -->
-          <div :class="['upload-zone', dragActive ? 'drag-active' : '']" @dragenter="handleDrag" @dragleave="handleDrag"
-            @dragover="handleDrag" @drop="handleDrop">
-            <i :class="['bi bi-upload', dragActive ? 'text-primary' : 'text-muted']" style="font-size: 4rem;"></i>
-            <h5 class="mt-3 mb-2">Drop your activity files here</h5>
-            <p class="text-muted mb-3">Supports .gpx, .fit, .tcx files</p>
-            <label class="btn btn-primary">
-              Browse Files
-              <input type="file" class="d-none" multiple accept=".gpx,.fit,.tcx" @change="handleFileInput" />
-            </label>
+          <!-- Upload UI -->
+          <div v-if="activities.length === 0">
+
+            <div
+              class="upload-zone"
+              :class="{ 'drag-active': dragActive }"
+              @dragenter.prevent="handleDrag"
+              @dragleave.prevent="handleDrag"
+              @dragover.prevent="handleDrag"
+              @drop.prevent="handleDrop"
+            >
+              <i
+                class="bi bi-upload"
+                :class="dragActive ? 'text-primary' : 'text-muted'"
+                style="font-size: 4rem;"
+              />
+              <h5 class="mt-3 mb-2">Drop your activity files here</h5>
+              <p class="text-muted mb-3">Supports .gpx, .fit, .tcx files</p>
+
+              <label class="btn btn-primary">
+                Browse Files
+                <input
+                  type="file"
+                  class="d-none"
+                  multiple
+                  accept=".gpx,.fit,.tcx"
+                  @change="handleFileInput"
+                />
+              </label>
+            </div>
+
+            <!-- Formats -->
+            <div class="row g-3 mt-3">
+              <FormatCard title=".GPX" text="GPS Exchange Format" colour="primary" />
+              <FormatCard title=".FIT" text="Garmin Activity" colour="success" />
+              <FormatCard title=".TCX" text="Training Center XML" colour="purple" />
+            </div>
+
           </div>
-
-          <!-- Supported Formats -->
-          <div class="row g-3 mt-3">
-            <div class="col-md-4">
-              <div class="card bg-light text-center">
-                <div class="card-body">
-                  <IBiFileEarmarkText class="text-primary fs-3" />
-                  <h6 class="mt-2 mb-1">.GPX</h6>
-                  <small class="text-muted">GPS Exchange Format</small>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="card bg-light text-center">
-                <div class="card-body">
-                  <IBiFileEarmarkText class="text-success fs-3" />
-                  <h6 class="mt-2 mb-1">.FIT</h6>
-                  <small class="text-muted">Garmin Activity</small>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="card bg-light text-center">
-                <div class="card-body">
-                  <IBiFileEarmarkText class="text-purple fs-3" />
-                  <h6 class="mt-2 mb-1">.TCX</h6>
-                  <small class="text-muted">Training Center XML</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-      </div>
         </div>
-
       </div>
     </div>
-  </div>
-  <!-- Uploaded Files -->
 
-  <div class="card">
-    <div class="card-body overflow-x-auto p3">
-      <div v-if="activities.length > 0" class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0">Edit Uploaded Activities</h5>
-          <button class="btn btn-success d-flex align-items-center gap-2" @click="saveAllActivities"
-            :disabled="isSaving || !isFormValid">
-            <div v-if="isSaving" class="spinner-border spinner-border-sm" role="status"></div>
-            <IBiCloudArrowUpFill v-else />
-            {{ isSaving ? 'Saving...' : 'Save All to Database' }}
-          </button>
-        </div>
-        <div v-for="(act, index) in activities" :key="index" class="card border-primary">
-          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <span>File: {{ act.hrmfile }}</span>
+    <!-- Activities Editor -->
+    <div v-if="activities.length > 0" class="container-fluid pb-4">
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+
+          <!-- Header -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>Edit Uploaded Activities</h5>
+
+            <button
+              class="btn btn-success d-flex align-items-center gap-2"
+              @click="saveAllActivities"
+              :disabled="isSaving || !isFormValid"
+            >
+              <div v-if="isSaving" class="spinner-border spinner-border-sm" />
+              <IBiCloudArrowUpFill v-else />
+              {{ isSaving ? 'Saving...' : 'Save All to Database' }}
+            </button>
           </div>
-          <div class="card-body overflow-auto p-3">
-            <div class="d-flex flex-nowrap gap-3 pb-2" style="width: max-content; min-width: 100%;">
-              <div class="row g-2" style="min-width: 1200px;">
-                <div style="width: 180px; flex-shrink: 0;">
-                  <label class="small fw-bold">Name</label>
-                  <BFormInput type="text" v-model="act.name" class="form-control form-control-sm" />
-                </div>
-                <div style="width: 140px; flex-shrink: 0;">
-                  <label class="small fw-bold">Date</label>
-                  <BFormInput type="text" v-model="act.date" class="form-control form-control-sm" />
-                </div>
-                <div style="width: 120px; flex-shrink: 0;">
-                  <label class="small fw-bold text-muted d-block mb-1">Sport</label>
+
+          <!-- Activity Cards -->
+          <div
+            v-for="(act, index) in activities"
+            :key="index"
+            class="card border-primary mb-3"
+          >
+            <div class="card-header bg-primary text-white">
+              File: {{ act.hrmfile }}
+            </div>
+
+            <div class="card-body overflow-auto p-3">
+
+              <div class="d-flex gap-3" style="min-width: 1200px;">
+
+                <!-- Example Fields (repeat pattern) -->
+                <Field label="Name">
+                  <BFormInput v-model="act.name" size="sm" />
+                </Field>
+
+                <Field label="Date">
+                  <BFormInput v-model="act.date" size="sm" />
+                </Field>
+
+                <Field label="Sport">
                   <BFormSelect v-model="act.sport" size="sm" @change="handleSportChange(act)">
                     <option :value="null">-- Select Sport --</option>
-                    <option v-for="s in sports" :key="s.id" :value="s.id">{{ s.name }}</option>
+                    <option v-for="s in sports" :key="s.id" :value="s.id">
+                      {{ s.name }}
+                    </option>
                   </BFormSelect>
-                </div>
-                <div style="width: 140px; flex-shrink: 0;">
-                  <label class="small fw-bold text-muted d-block mb-1">Subsport</label>
-                  <BFormSelect v-model="act.subsport" size="sm">
-                    :disabled="!act.subsportOptions.length">
+                </Field>
+
+                <Field label="Subsport">
+                  <BFormSelect
+                    v-model="act.subsport"
+                    size="sm"
+                    :disabled="!act.subsportOptions.length"
+                  >
                     <option :value="null">-- Select Subsport --</option>
-                    <option v-for="ss in act.subsportOptions" :key="ss.id" :value="ss.id">{{ ss.name }}</option>
+                    <option v-for="ss in act.subsportOptions" :key="ss.id" :value="ss.id">
+                      {{ ss.name }}
+                    </option>
                   </BFormSelect>
-                </div>
-                <div style="width: 110px; flex-shrink: 0;">
-                  <label class="small fw-bold text-muted d-block mb-1">Duration</label>
+                </Field>
+
+                <Field label="Duration">
                   <BFormInput type="text" size="sm"
                     :state="/^(\d{1,2}):(\d{1,2}):(\d{1,2})$/.test(secondsToHMS(act.duration))"
                     :value="secondsToHMS(act.duration)"
                     @blur="act.duration = hmsToSeconds($event.target.value, act.duration)" />
-                </div>
-                <div style="width: 115px; flex-shrink: 0;">
-                  <label class="small fw-bold text-muted">Intensity</label>
+                </Field>
+
+                <Field label="Intensity">
                   <select v-model="act.intensity" class="form-select form-select-sm">
                     <option :value="null">-- Optional --</option>
                     <option :value="1">Recovery</option>
@@ -122,27 +139,35 @@
                     <option :value="7">Anaerobic</option>
                     <option :value="4">Sprint</option>
                   </select>
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Distance (km)</label>
+                </Field>
+
+                <Field label="Distance">
                   <BFormInput type="number" step="0.01" size="sm" :value="metersToKm(act.distance)"
                     @blur="act.distance = kmToMeters($event.target.value, act.distance)" />
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Speed (km/h)</label>
+                </Field>
+
+                <Field label="Speed">
                   <BFormInput type="number" step="0.1" size="sm" :value="msToKmh(act.avgspeed)"
                     @blur="act.avgspeed = kmhToMs($event.target.value, act.avgspeed)" />
-                </div>
-                <div style="width: 90px; flex-shrink: 0;">
-                  <label class="small fw-bold">Latitude</label>
-                  <input type="number" v-model.number="act.latitude" class="form-control form-control-sm">
-                </div>
-                <div style="width: 90px; flex-shrink: 0;">
-                  <label class="small fw-bold">Longitude</label>
-                  <input type="number" v-model.number="act.longitude" class="form-control form-control-sm">
-                </div>
-                <div style="width: 120px; flex-shrink: 0;">
-                  <label class="small fw-bold">Equipment</label>
+                </Field>
+
+                <Field label="Latitude">
+                  <input
+                    type="number"
+                    v-model.number="act.latitude"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Longitude">
+                  <input
+                    type="number"
+                    v-model.number="act.longitude"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Equipment">
                   <select v-model="act.equipment" class="form-select form-select-sm"
                     :disabled="!act.equipmentOptions.length">
                     <option :value="null">-- Select Equipment --</option>
@@ -150,61 +175,112 @@
                       {{ e.name }}
                     </option>
                   </select>
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Avg HR</label>
-                  <input type="number" v-model.number="act.heartrate" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Comments</label>
-                  <input type="text" v-model="act.comments" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Ascent</label>
-                  <input type="number" v-model.number="act.ascent" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Calories</label>
-                  <input type="number" v-model.number="act.calories" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Cadence</label>
-                  <input type="number" v-model.number="act.avgcadence" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Power</label>
-                  <input type="text" v-model="act.avgpower" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Aerobic TE</label>
-                  <input type="number" v-model.number="act.ate" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Anaerobic TE</label>
-                  <input type="number" v-model.number="act.ante" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Load</label>
-                  <input type="number" v-model.number="act.training_load" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Feel</label>
-                  <input type="number" v-model.number="act.workout_feel" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">RPE</label>
-                  <input type="text" v-model="act.workout_rpe" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Device</label>
-                  <input type="number" v-model.number="act.device" class="form-control form-control-sm">
-                </div>
-                <div style="width: 100px; flex-shrink: 0;">
-                  <label class="small fw-bold">Offset</label>
-                  <input type="number" v-model.number="act.ante" class="form-control form-control-sm">
-                </div>
-                <div class="row g-2" style="min-width: 1200px;">
-                </div>
+                </Field>
+
+                <Field label="Avg HR">
+                  <input
+                    type="number"
+                    v-model.number="act.heartrate"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Notes">
+                  <input
+                    type="number"
+                    v-model.number="act.comments"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Ascent">
+                  <input
+                    type="number"
+                    v-model.number="act.ascent"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Calories">
+                  <input
+                    type="number"
+                    v-model.number="act.calories"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Cadence">
+                  <input
+                    type="number"
+                    v-model.number="act.avgcadence"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Power">
+                  <input
+                    type="number"
+                    v-model.number="act.avgpower"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Aerobic TE">
+                  <input
+                    type="number"
+                    v-model.number="act.ate"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Anaerobic TE">
+                  <input
+                    type="number"
+                    v-model.number="act.ante"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Load">
+                  <input
+                    type="number"
+                    v-model.number="act.training_load"
+                    class="form-control form-control-sm"
+                  />
+                </Field>                
+
+                <Field label="Feel">
+                  <input
+                    type="number"
+                    v-model.number="act.workout_feel"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="RPE">
+                  <input
+                    type="number"
+                    v-model.number="act.workout_rpe"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Device">
+                  <input
+                    type="number"
+                    v-model.number="act.device"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
+                <Field label="Offset">
+                  <input
+                    type="number"
+                    v-model.number="act.tzoffset"
+                    class="form-control form-control-sm"
+                  />
+                </Field>
+
               </div>
             </div>
           </div>
@@ -216,6 +292,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import Field from '@/components/ui/Field.vue'
+import FormatCard from '@/components/ui/FormatCard.vue'
+
+
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const hrmData = ref([])
@@ -411,7 +491,7 @@ const saveAllActivities = async () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(act), // Sending the single activity object
+        body: JSON.stringify(serializeActivityForApi(act))
       });
 
       if (!response.ok) throw new Error(`Failed to save ${act.name}`);
@@ -477,11 +557,20 @@ const kmToMeters = (km: string, current: number) => {
   return isNaN(val) ? current : Math.round(val * 1000);
 };
 
+
 // Speed: m/s <-> km/h (Conversion factor: 3.6)
 const msToKmh = (ms: number | string) => (Number(ms) * 3.6).toFixed(2);
 const kmhToMs = (kmh: string, current: number) => {
   const val = parseFloat(kmh);
   return isNaN(val) ? current : val / 3.6;
+};
+
+const serializeActivityForApi = (act: any) => {
+  return {
+    ...act,
+    distance: Number((act.distance / 1000).toFixed(2)), // metres → km
+    //avgspeed: Number((act.avgspeed * 3.6).toFixed(2)), // optional: m/s → km/h if your API expects it
+  };
 };
 
 </script>
