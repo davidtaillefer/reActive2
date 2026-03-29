@@ -121,7 +121,6 @@ const fetchActivities = async (start, end) => {
         // Standardize to YYYY-MM-DD
         const cleanDate = new Date(a.date).toISOString().split('T')[0];
         const iconName = sportIcons.value[a.sport] || '';
-        // Public assets are served from the root '/'
         const iconUrl = iconName ? `/icons/${iconName}` : '';
 
         return {
@@ -137,10 +136,8 @@ const fetchActivities = async (start, end) => {
   }
 };
 
-
 // --- Calendar Event Handlers ---
 const handleDatesSet = async (arg) => {
-  // Wait for sports if they are still loading to prevent icon URL errors
   if (!sportsLoaded.value) {
     pendingRange.value = { start: arg.start, end: arg.end };
     return;
@@ -212,20 +209,6 @@ const formatToISO = (dateStr: string) => {
   /* centre horizontally */
 }
 
-/*ensure grid lines via option-added class
-:deep(.fc-grid-line) {
-  border: 1px solid #dee2e6;
-}
-
-/* full calendar outline
-:deep(.fc) {
-  border: 1px solid #dee2e6;
-}
-
-/* maintain earlier day-cell styling if necessary
-:deep(.fc-daygrid-day-frame) {
-  height: 100%;
-}*/
 
 /* Fix Calendar Borders and Grid Lines */
 :deep(.fc-theme-bootstrap) {

@@ -11,29 +11,41 @@
       <BForm @submit.prevent="saveActivity">
         <!-- Basic Info Section -->
         <h5 class="border-bottom pb-2 mb-3">General Information</h5>
-<BRow class="g-3 mb-4">
+        <BRow class="g-3 mb-4">
           <BCol cols="12" md="6">
-            <BFormGroup label="Activity Name"><BFormInput v-model="form.name" /></BFormGroup>
+            <BFormGroup label="Activity Name">
+              <BFormInput v-model="form.name" />
+            </BFormGroup>
           </BCol>
           <BCol cols="12" md="4">
-            <BFormGroup label="Date"><BFormInput v-model="form.date" type="datetime-local" /></BFormGroup>
+            <BFormGroup label="Date">
+              <BFormInput v-model="form.date" type="datetime-local" />
+            </BFormGroup>
           </BCol>
           <BCol cols="12" md="2">
             <!-- Ensure lowercase 'tzoffset' -->
-            <BFormGroup label="TZ Offset"><BFormInput v-model.number="form.tzoffset" type="number" step="0.5" /></BFormGroup>
+            <BFormGroup label="TZ Offset">
+              <BFormInput v-model.number="form.offset" type="number" step="0.5" />
+            </BFormGroup>
           </BCol>
         </BRow>
 
         <!-- Categorization -->
-                <BRow class="g-3 mb-4">
+        <BRow class="g-3 mb-4">
           <BCol cols="12" md="4">
-            <BFormGroup label="Sport"><BFormSelect v-model="form.sport" :options="sportOptions" /></BFormGroup>
+            <BFormGroup label="Sport">
+              <BFormSelect v-model="form.sport" :options="sportOptions" />
+            </BFormGroup>
           </BCol>
           <BCol cols="12" md="4">
-            <BFormGroup label="Subsport"><BFormSelect v-model="form.subsport" :options="subsportOptions" /></BFormGroup>
+            <BFormGroup label="Subsport">
+              <BFormSelect v-model="form.subsport" :options="subsportOptions" />
+            </BFormGroup>
           </BCol>
           <BCol cols="12" md="4">
-            <BFormGroup label="Equipment"><BFormSelect v-model="form.equipment" :options="equipmentOptions" /></BFormGroup>
+            <BFormGroup label="Equipment">
+              <BFormSelect v-model="form.equipment" :options="equipmentOptions" />
+            </BFormGroup>
           </BCol>
         </BRow>
 
@@ -41,45 +53,96 @@
         <h5 class="border-bottom pb-2 mb-3">Performance Metrics</h5>
         <BRow class="g-3 mb-4">
           <BCol cols="6" md="3">
-            <BFormGroup label="Distance (km)"><BFormInput v-model.number="form.distance" type="number" step="0.01" /></BFormGroup>
+            <BFormGroup label="Distance (km)">
+              <BFormInput v-model.number="form.distance" type="number" step="0.01" />
+            </BFormGroup>
           </BCol>
           <BCol cols="6" md="3">
-            <BFormGroup label="Duration (sec)"><BFormInput v-model.number="form.duration" type="number" /></BFormGroup>
+            <BFormGroup label="Duration (sec)">
+              <BFormInput v-model.number="form.duration" type="number" />
+            </BFormGroup>
           </BCol>
           <BCol cols="6" md="3">
-            <BFormGroup label="Avg Speed (km/h)"><BFormInput v-model.number="form.avgspeed" type="number" step="0.1" /></BFormGroup>
+            <BFormGroup label="Avg Speed (km/h)">
+              <BFormInput v-model.number="form.avgspeed" type="number" step="0.1" />
+            </BFormGroup>
           </BCol>
           <BCol cols="6" md="3">
-            <BFormGroup label="Calories"><BFormInput v-model.number="form.calories" type="number" /></BFormGroup>
+            <BFormGroup label="Calories">
+              <BFormInput v-model.number="form.calories" type="number" />
+            </BFormGroup>
           </BCol>
         </BRow>
 
         <!-- Technical Stats -->
         <BRow class="g-3 mb-4">
-          <BCol cols="6" md="2"><BFormGroup label="Avg HR"><BFormInput v-model.number="form.heartrate" type="number" /></BFormGroup></BCol>
-          <BCol cols="6" md="2"><BFormGroup label="Avg Power"><BFormInput v-model.number="form.avgpower" type="number" /></BFormGroup></BCol>
-          <BCol cols="6" md="2"><BFormGroup label="Avg Cadence"><BFormInput v-model.number="form.avgcadence" type="number" /></BFormGroup></BCol>
-          <BCol cols="6" md="2"><BFormGroup label="Ascent (m)"><BFormInput v-model.number="form.ascent" type="number" /></BFormGroup></BCol>
- <BCol cols="6" md="6">
+          <BCol cols="6" md="2">
+            <BFormGroup label="Avg HR">
+              <BFormInput v-model.number="form.heartrate" type="number" />
+            </BFormGroup>
+          </BCol>
+          <BCol cols="6" md="2">
+            <BFormGroup label="Avg Power">
+              <BFormInput v-model.number="form.avgpower" type="number" />
+            </BFormGroup>
+          </BCol>
+          <BCol cols="6" md="2">
+            <BFormGroup label="Avg Cadence">
+              <BFormInput v-model.number="form.avgcadence" type="number" />
+            </BFormGroup>
+          </BCol>
+          <BCol cols="6" md="2">
+            <BFormGroup label="Ascent (m)">
+              <BFormInput v-model.number="form.ascent" type="number" />
+            </BFormGroup>
+          </BCol>
+          <BCol cols="6" md="6">
             <!-- Ensure lowercase 'device' -->
-            <BFormGroup label="Device"><BFormInput v-model="form.device" /></BFormGroup>
-          </BCol>        </BRow>
+            <BFormGroup label="Device">
+              <BFormInput v-model="form.device" />
+            </BFormGroup>
+          </BCol>
+        </BRow>
 
         <!-- Training Load & Effect -->
         <h5 class="border-bottom pb-2 mb-3">Training Load & Effect</h5>
         <BRow class="g-3 mb-4">
-          <BCol cols="6" md="2"><BFormGroup label="Load"><BFormInput v-model.number="form.training_load" type="number" /></BFormGroup></BCol>
-          <BCol cols="6" md="2"><BFormGroup label="ATE (Aerobic)"><BFormInput v-model.number="form.ate" type="number" step="0.1" /></BFormGroup></BCol>
-<BCol cols="6" md="3">
+          <BCol cols="6" md="2">
+            <BFormGroup label="Load">
+              <BFormInput v-model.number="form.training_load" type="number" />
+            </BFormGroup>
+          </BCol>
+          <BCol cols="6" md="2">
+            <BFormGroup label="ATE (Aerobic)">
+              <BFormInput v-model.number="form.ate" type="number" step="0.1" />
+            </BFormGroup>
+          </BCol>
+          <BCol cols="6" md="3">
             <!-- Ensure lowercase 'ante' -->
-            <BFormGroup label="ANTE"><BFormInput v-model.number="form.ante" type="number" step="0.1" /></BFormGroup>
-          </BCol> <BCol cols="6" md="3"><BFormGroup label="Intensity">
-            <BFormSelect v-model="form.intensity" :options="intensityOptions" />
-          </BFormGroup></BCol>          <BCol cols="6" md="2"><BFormGroup label="Feel (1-100)"><BFormInput v-model.number="form.workout_feel" type="number" /></BFormGroup></BCol>
-          <BCol cols="6" md="2"><BFormGroup label="RPE (1-100)"><BFormInput v-model.number="form.workout_rpe" type="number" /></BFormGroup></BCol>
+            <BFormGroup label="ANTE">
+              <BFormInput v-model.number="form.ante" type="number" step="0.1" />
+            </BFormGroup>
+          </BCol>
+          <BCol cols="6" md="3">
+            <BFormGroup label="Intensity">
+              <BFormSelect v-model="form.intensity" :options="intensityOptions" />
+            </BFormGroup>
+          </BCol>
+          <BCol cols="6" md="2">
+            <BFormGroup label="Feel (1-100)">
+              <BFormInput v-model.number="form.workout_feel" type="number" />
+            </BFormGroup>
+          </BCol>
+          <BCol cols="6" md="2">
+            <BFormGroup label="RPE (1-100)">
+              <BFormInput v-model.number="form.workout_rpe" type="number" />
+            </BFormGroup>
+          </BCol>
         </BRow>
 
-        <BFormGroup label="Comments"><BFormTextarea v-model="form.comments" rows="3" /></BFormGroup>
+        <BFormGroup label="Comments">
+          <BFormTextarea v-model="form.comments" rows="3" />
+        </BFormGroup>
 
         <div class="mt-4 d-flex gap-2">
           <BButton type="submit" variant="primary" :disabled="isSaving">
@@ -118,12 +181,12 @@ const updateCascadingOptions = async (sportId: number) => {
   try {
     const [ssRes, eqRes] = await Promise.all([
       fetch(`${apiBaseUrl}subsport/${sportId}`),
-      fetch(`${apiBaseUrl}equipment/${sportId}`) // ✅ Filtered by sport
+      fetch(`${apiBaseUrl}equipment/${sportId}`)
     ]);
-    
+
     const ssData = await ssRes.json();
     const eqData = await eqRes.json();
-    
+
     subsportOptions.value = ssData.map((ss: any) => ({ value: ss.id, text: ss.name }));
     equipmentOptions.value = eqData.map((e: any) => ({ value: e.id, text: e.name }));
   } catch (err) {
@@ -141,13 +204,13 @@ const fetchData = async () => {
     // 2. Fetch Activity Data
     const actRes = await fetch(`${apiBaseUrl}activities/${route.params.id}`);
     const data = await actRes.json();
-    
+
     // Normalize date for input
     if (data.date) {
       const d = new Date(data.date);
       data.date = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     }
-    
+
     form.value = data;
 
     // 3. Initial load of Subsport/Equipment based on current activity sport
@@ -159,7 +222,6 @@ const fetchData = async () => {
   }
 };
 
-// ✅ Watch for Sport changes to refresh both Subsport and Equipment lists
 watch(() => form.value?.sport, (newSportId) => {
   if (newSportId) {
     // Reset selections if the sport changes
@@ -172,7 +234,7 @@ watch(() => form.value?.sport, (newSportId) => {
 const saveActivity = async () => {
   isSaving.value = true;
   const payload = { ...form.value };
-  if (payload.date) payload.date = new Date(payload.date).toUTCString();
+  if (payload.date) payload.date = new Date(payload.date).toISOString();
 
   try {
     const res = await fetch(`${apiBaseUrl}activities/${route.params.id}`, {
@@ -190,5 +252,3 @@ const saveActivity = async () => {
 
 onMounted(fetchData);
 </script>
-
-

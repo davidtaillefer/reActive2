@@ -56,7 +56,6 @@
 
             <!-- Right Side - Map -->
             <BCol cols="12" md="8" lg="9" class="d-flex flex-column">
-              <!-- Ensure this card-body fills the column height -->
               <BCardBody class="p-0 position-relative flex-fill d-flex flex-column">
                 <RouteMap v-if="hrmData" :key="mapKey" :hrmData="hrmData"
                   style="height: 100%; width: 100%; min-height: 400px;" class="flex-fill" />
@@ -70,18 +69,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed, resolveComponent } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { BContainer, BCard, BCardBody, BRow, BCol, BFormSelect } from 'bootstrap-vue-next';
 import RouteMap from '@/components/ui/RouteMap.vue'
-
-//import { IBiFlower1, IBiSun, IBiTree } from 'bootstrap-icons-vue'
 
 const activities = ref([])
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const hrmData = ref([])
 const startDate = ref('2025-12-01')
 const endDate = ref('2026-08-31')
-//const hrmfile = ref('')
 
 const formatDuration = (totalSeconds: number) => {
   const h = Math.floor(totalSeconds / 3600);
@@ -98,10 +94,7 @@ const sumField = (arr: any[], field: string): number => {
   return total;
 };
 
-
-
 const seasonalStats = computed(() => {
-  // 1. Calculate Winter stats from the 'activities' ref
   const winterDistMeters = sumField(activities.value, 'distance');
   const winterTimeSeconds = sumField(activities.value, 'duration');
 
@@ -127,7 +120,7 @@ async function loadOtherSeasons() {
   const [startYear] = selectedYear.value.split('-');
   const year = parseInt(startYear);
 
-  // Define the periods for Cycling (Sport ID 2)
+  // Define the periods for Cycling
   const periods = [
     { name: 'Spring', start: `${year + 1}-05-01`, end: `${year + 1}-06-30`, icon: 'IBiFlower1', color: 'green' },
     { name: 'Summer', start: `${year + 1}-07-01`, end: `${year + 1}-08-31`, icon: 'IBiSun', color: 'orange' },
@@ -138,10 +131,10 @@ async function loadOtherSeasons() {
 
   for (const p of periods) {
     try {
-      const res = await fetch(`${apiBaseUrl}activities?sport=2&start=${p.start}&end=${p.end}`);
+      const res = await fetch(`${apiBaseUrl}activities?sport=1&start=${p.start}&end=${p.end}`);
       const data = await res.json();
 
-      const distKm = sumField(data, 'distance') / 1000;
+      const distKm = sumField(data, 'distance');
       const timeSec = sumField(data, 'duration');
 
       results.push({
@@ -156,8 +149,6 @@ async function loadOtherSeasons() {
       console.error(`Error loading ${p.name}:`, err);
     }
   }
-
-  // Update the ref once with all new data to maintain reactivity
   otherSeasons.value = results;
 }
 
@@ -171,15 +162,13 @@ const seasonColors = {
 
 const generateSkiSeasons = () => {
   const now = new Date();
-  const currentMonth = now.getMonth(); // 0 = Jan, 10 = Nov
+  const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  // If we are before November, the "current" season started last year
-  // (e.g., in March 2026, the season started in Nov 2025)
   const latestSeasonStart = currentMonth < 10 ? currentYear - 1 : currentYear;
 
   const options = [];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 20; i++) {
     const start = latestSeasonStart - i;
     const end = start + 1;
     options.push({

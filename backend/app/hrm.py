@@ -25,7 +25,7 @@ def readhrm(hrmfile):
 
     
     if file_extension == '.tcx':
-        base_path = base_path + 'tcx/' #'/srv/md0/data/gps/tcx/'
+        base_path = base_path + 'tcx/'
         with open(base_path+hrmfile) as xml_file:
             data_dict = xmltodict.parse(xml_file.read())
             res = tcx_to_fit_like(data_dict)
@@ -42,15 +42,11 @@ def readhrm(hrmfile):
         track = {}
         tracks = {}
         li = 0
-        lapindex = {}
         ti = {}
         ct = 0
         lnct = 0
-        ctlaps = 0
         st = 0
         set_list = {}
-        ctlaps = 0
-        ctlens = 0
         has_laps = False
         has_lengths = False
         
@@ -151,9 +147,6 @@ def readhrm(hrmfile):
                 data_dict['Activities']['Lap'][lap] |= {'Length': {}}
                 tracks[lap] = {}
                 ti[lap] = 0
-            
-    
-            #lapindex[lap] = 0
                 
         try:
             for length in messages['length_mesgs']:
@@ -186,31 +179,20 @@ def readhrm(hrmfile):
         # add them to the corresponding lap record and to a flat list of trackpoints
         
         if has_laps:
-            # for lap in data_dict['Activities']['Lap']:
-                # data_dict['Activities']['Lap'][lap] |= {'Track': {}}
-                # tracks[lap] = {}
-                # ti[lap] = 0
 
             flat_tracks = {}
 
             try:
+                prev_point = None
+                grade_window = []
+                WINDOW_SIZE = 5
+
                 for trackpoint in messages["record_mesgs"]:
-                    ct += 1
                     track = {}
-                    found = -1
+
                     for field_name in trackpoint:
-                        #if isinstance(field_name, int):
-                        #    continue
                         field_value = trackpoint[field_name]
-                        #if isinstance(field_value, numbers.Number):
-                        #    if math.isnan(field_value):
-                        #        print("Not a number")
-                        #        continue
-                        try:
-                            if math.isnan(field_value):
-                                continue
-                        except:
-                            a = 1
+
                         try:
                             if not re.search('unknown', field_name) and field_value != None:
                                 if isinstance(field_value, datetime):
@@ -220,20 +202,36 @@ def readhrm(hrmfile):
                                 track[field_name] = field_value
                         except:
                             continue
-                    for lap in data_dict['Activities']['Lap']:
-                        if datetime.strptime(data_dict['Activities']['Lap'][lap]['start_time'], format) < datetime.strptime(track['timestamp'], format) <= data_dict['Activities']['Lap'][lap]['end_time']:
-                            found = lap
-                            break
-                    if found == -1:
-                        print ('missed', data_dict['Activities']['Lap'][lap]['start_time'], activity['timestamp'], data_dict['Activities']['Lap'][lap]['end_time'])
-                    else:
-                        tracks[found][ti[lap]] = track
-                        ti[lap] += 1 
+
+                    if prev_point:
+                        try:
+                            lat1 = prev_point.get('position_lat')
+                            lon1 = prev_point.get('position_long')
+                            ele1 = prev_point.get('enhanced_altitude')
+
+                            lat2 = track.get('position_lat')
+                            lon2 = track.get('position_long')
+                            ele2 = track.get('enhanced_altitude')  
+
+                            if None not in (lat1, lon1, lat2, lon2, ele1, ele2):
+                                dist = haversine(lat1, lon1, lat2, lon2)
+                                if dist > 0:
+                                    grade = ((ele2 - ele1) / dist) * 100
+                                    track['grade'] = round(grade, 2)
+
+                                    grade_window.append(grade)
+                                    if len(grade_window) > WINDOW_SIZE:
+                                        grade_window.pop(0)
+
+                                    track['grade_smooth'] = round(sum(grade_window) / len(grade_window), 2)
+                        except:
+                            pass
+
+                    prev_point = track
+                    print(track)
                     flat_tracks[ct] = track
+                    ct += 1
         
-                for lap in data_dict['Activities']['Lap']:
-                    data_dict['Activities']['Lap'][lap]['Track'] = tracks[lap]
-                    ctlaps += len(tracks[lap])
                 data_dict['Activities']['Track'] = flat_tracks
 
             except Exception as error:
@@ -241,6 +239,10 @@ def readhrm(hrmfile):
         else:
 
             try:
+                prev_point = None
+                grade_window = []
+                WINDOW_SIZE = 5
+
                 for trackpoint in messages["record_mesgs"]:
                     track = {}
                     for field_name in trackpoint:
@@ -255,6 +257,32 @@ def readhrm(hrmfile):
                                 track[field_name] = field_value
                         except:
                             continue
+                    if prev_point:
+                        try:
+                            lat1 = prev_point.get('position_lat')
+                            lon1 = prev_point.get('position_long')
+                            ele1 = prev_point.get('enhanced_altitude')
+
+                            lat2 = track.get('position_lat')
+                            lon2 = track.get('position_long')
+                            ele2 = track.get('enhanced_altitude')
+
+                            if None not in (lat1, lon1, lat2, lon2, ele1, ele2):
+                                dist = haversine(lat1, lon1, lat2, lon2)
+
+                                if dist > 0:
+                                    grade = ((ele2 - ele1) / dist) * 100
+                                    track['grade'] = round(grade, 2)
+
+                    # ✅ smoothing
+                                    grade_window.append(grade)
+                                    if len(grade_window) > WINDOW_SIZE:
+                                        grade_window.pop(0)
+
+                                    track['grade_smooth'] = round(sum(grade_window) / len(grade_window), 2)
+                        except:
+                            pass
+                    prev_point = track
                     tracks[ct] = track
                     ct += 1
         
@@ -449,6 +477,8 @@ def tcx_to_fit_like(tcx):
 
         hr_values = []
         zone_time = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        total_ascent = 0
+        total_descent = 0
 
         for p in points:
             lat = safe_float(p.get("Position", {}).get("LatitudeDegrees"))
@@ -482,6 +512,14 @@ def tcx_to_fit_like(tcx):
                 if dt > 0 and dist is not None and prev_point["distance"] is not None:
                     speed = (dist - prev_point["distance"]) / dt
 
+            if prev_point and alt is not None and prev_point["enhanced_altitude"] is not None:
+                delta = alt - prev_point["enhanced_altitude"]
+
+                if delta > 0:
+                    total_ascent += delta
+                else:
+                    total_descent += abs(delta)
+
             point = {
                 "timestamp": ts,
                 "position_lat": lat,
@@ -489,8 +527,15 @@ def tcx_to_fit_like(tcx):
                 "distance": dist,
                 "enhanced_altitude": alt,
                 "enhanced_speed": speed,
-                "heart_rate": hr
+                "heart_rate": hr,
+                "total_ascent": total_ascent,
+                "total_descent": total_descent
             }
+
+            point["grade"] = compute_grade(prev_point, point)
+
+
+            
 
             if not first_point:
                 first_point = point
@@ -503,6 +548,8 @@ def tcx_to_fit_like(tcx):
 
     avg_hr = sum(hr_values) / len(hr_values) if hr_values else None
     max_hr_observed = max(hr_values) if hr_values else None
+
+    smooth_grades(track_out)
 
     zones = {
         "hr_calc_type": "percent_max_hr",
@@ -586,3 +633,70 @@ def get_hr_zone(hr, max_hr):
         return 4
     else:
         return 5
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371000  # metres
+
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+
+    a = math.sin(dphi/2)**2 + \
+        math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
+
+    return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+def compute_grade(prev_point, curr_point):
+    if not prev_point:
+        return None
+
+    lat1 = prev_point["position_lat"]
+    lon1 = prev_point["position_long"]
+    lat2 = curr_point["position_lat"]
+    lon2 = curr_point["position_long"]
+
+    alt1 = prev_point["enhanced_altitude"]
+    alt2 = curr_point["enhanced_altitude"]
+
+    if None in (lat1, lon1, lat2, lon2, alt1, alt2):
+        return None
+
+    horizontal_dist = haversine(lat1, lon1, lat2, lon2)
+
+    # Ignore noise (< 3m movement)
+    if horizontal_dist < 3:
+        return None
+
+    elevation_delta = alt2 - alt1
+
+    grade = (elevation_delta / horizontal_dist) * 100
+
+    # Clamp extreme GPS spikes
+    if grade > 50:
+        grade = 50
+    elif grade < -50:
+        grade = -50
+
+    return grade
+
+def smooth_grades(track, window=5):
+    keys = sorted(track.keys())
+    grades = [track[k].get("grade") for k in keys]
+
+    smoothed = []
+
+    for i in range(len(grades)):
+        window_vals = [
+            g for g in grades[max(0, i-window):i+window+1]
+            if g is not None
+        ]
+
+        if window_vals:
+            smoothed.append(sum(window_vals) / len(window_vals))
+        else:
+            smoothed.append(None)
+
+    for k, g in zip(keys, smoothed):
+        track[k]["grade_smooth"] = g
