@@ -331,7 +331,7 @@ const uploadFile = async (fileItem: any) => {
     if (!response.ok) throw new Error('Upload failed');
 
     fileItem.status = 'success';
-    console.log('Upload successful, now fetching HRM data for:', fileItem.name);
+    // Upload successful; fetching HRM data for file
 
     // Read the HRM file data immediately after upload
     try {
@@ -339,7 +339,7 @@ const uploadFile = async (fileItem: any) => {
       if (res.ok) {
         const data = await res.json();
         hrmData.value.push(data);
-        console.log('Fetched HRM data:', data);
+        // Fetched HRM data
         const newActivity = createActivityTemplate();
         const rawData = data.Activities || {};
         newActivity.hrmfile = fileItem.name;
@@ -401,7 +401,7 @@ const uploadFile = async (fileItem: any) => {
     }
 
         activities.value.push(newActivity);
-        console.log('Updated activity array:', activities.value);
+        // Updated activity array
 
 
 
@@ -432,7 +432,7 @@ const processFiles = (files: FileList) => {
   // Trigger the upload (and subsequent fetch) for each file
   newFiles.forEach(fileItem => uploadFile(fileItem));
 };
-console.log('Uploaded files:', hrmData.value);
+// uploaded files info removed (debug)
 
 // Function to fetch subsports when a sport is selected
 const handleSportChange = async (act: any) => {

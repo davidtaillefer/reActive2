@@ -61,7 +61,7 @@ const handleSync = async () => {
     if (!response.ok) throw new Error('Sync failed')
     
     const data = await response.json()
-    console.log('Sync complete:', data)
+    // sync complete
     // Optional: add a success toast or alert here
   } catch (err) {
     console.error('Error during sync:', err)

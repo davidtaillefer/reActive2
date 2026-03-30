@@ -15,7 +15,8 @@
       <!-- Route Map (2/3 width on lg+) -->
 
       <BCol cols="12" lg="8" class="d-flex flex-column h-100">
-        <RouteMap v-if="metricsAvailability.position" :hrmData="hrmData" class="flex-grow-1 shadow-sm" />
+          <RouteMap v-if="metricsAvailability.position" :hrmData="hrmData" :hoveredPoint="hoveredPoint"
+            @point-hover="onChildHover" @point-leave="onChildLeave" class="flex-grow-1 shadow-sm" />
         <div v-else class="p-3 bg-white rounded shadow-sm flex-fill d-flex align-items-center justify-content-center">
           <p class="mb-0">No HRM file data available.</p>
         </div>
@@ -24,11 +25,16 @@
       <!-- Metrics Section (1/3 width on lg+) -->
       <BCol lg="4" class="d-flex flex-column h-100">
         <div class="flex-grow-1 overflow-auto d-flex flex-column gap-3 pe-2">
-          <HeartRateCard v-if="metricsAvailability.heartRate" :activity="activity" :hrmData="hrmData" />
-          <SpeedCard v-if="metricsAvailability.speed" :activity="activity" :hrmData="hrmData" />
-          <ElevationCard v-if="metricsAvailability.elevation" :activity="activity" :hrmData="hrmData" />
-          <CadenceCard v-if="metricsAvailability.cadence" :activity="activity" :hrmData="hrmData" />
-          <PowerCard v-if="metricsAvailability.power" :activity="activity" :hrmData="hrmData" />
+          <HeartRateCard v-if="metricsAvailability.heartRate" :activity="activity" :hrmData="hrmData"
+            :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
+          <SpeedCard v-if="metricsAvailability.speed" :activity="activity" :hrmData="hrmData"
+            :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
+          <ElevationCard v-if="metricsAvailability.elevation" :activity="activity" :hrmData="hrmData"
+            :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
+          <CadenceCard v-if="metricsAvailability.cadence" :activity="activity" :hrmData="hrmData"
+            :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
+          <PowerCard v-if="metricsAvailability.power" :activity="activity" :hrmData="hrmData"
+            :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
           <HRZonesCard :hrmData="hrmData[0]" />
           <PowerZonesCard v-if="metricsAvailability.power" :hrmData="hrmData[0]" />
           <BRow class="mt-3">
@@ -76,6 +82,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, toRaw } from 'vue'
+import { findNearestPoint } from '@/composables/useHoverMatch'
 import { useRoute } from 'vue-router'
 
 import { BContainer, BRow, BCol, BCard, BCardBody } from 'bootstrap-vue-next'
@@ -105,6 +112,24 @@ const hrmData = ref([]) // Initialize as an array to hold multiple HRM datasets 
 const hrmfile = ref(activity.value.hrmfile || '')
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+
+// Hover sync state (parent-managed)
+const hoveredPoint = ref(null)
+
+// Simple debounce implementation
+function debounce(fn, wait){
+  let t = null
+  function wrapped(...args){
+    if (t) clearTimeout(t)
+    t = setTimeout(() => fn(...args), wait)
+  }
+  wrapped.cancel = () => { if (t) clearTimeout(t); t = null }
+  return wrapped
+}
+
+const setHover = debounce((p) => { hoveredPoint.value = p }, 32)
+function onChildHover(payload){ setHover(payload) }
+function onChildLeave(){ setHover.cancel(); hoveredPoint.value = null }
 
 async function loadSports() {
   try {
@@ -157,6 +182,9 @@ onMounted(async () => {
   }
 
   await loadSports()
+
+  // development-only programmatic hover removed
+  // ActivityView mounted (dev debug removed)
 })
 
 const getFieldSeries = (field: string) => {
