@@ -5,6 +5,7 @@ import router from './router'
 import './assets/styles/main.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap-vue-next/dist/bootstrap-vue-next.css'
+import './chartjs-setup'
 
 import {
   BContainer,

@@ -28,6 +28,7 @@
     "@iconify-json/bi": "^1.2.7",
     "@iconify/json": "^2.2.447",
     "@vitejs/plugin-vue": "^6.0.2",
+    "playwright": "^1.58.2",
     "unplugin-icons": "^23.0.1",
     "unplugin-vue-components": "^31.0.0",
     "vite": "^7.3.1"
