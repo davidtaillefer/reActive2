@@ -6,7 +6,7 @@
           <BCard class="h-100 shadow-sm">
             <BCardBody>
               <!-- FullCalendar with options -->
-              <FullCalendar :options="calendarOptions" />
+              <FullCalendar ref="calendarRef" :options="calendarOptions" />
             </BCardBody>
           </BCard>
         </div>
@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
@@ -39,7 +39,22 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
 const activities2 = ref([])
 const calendarEvents = ref([]); // Create a separate ref for events
-const currentCalendarDate = ref(new Date())
+// Try to restore previously-selected calendar month from localStorage
+const STORAGE_KEY = 'calendar.currentDate'
+const loadSavedDate = () => {
+  try {
+    const v = localStorage.getItem(STORAGE_KEY)
+    if (v) {
+      // v expected as 'YYYY-MM-DD' or full ISO; Date can parse both
+      const d = new Date(v)
+      if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), 1)
+    }
+  } catch (e) {}
+  return new Date()
+}
+const currentCalendarDate = ref(loadSavedDate())
+const calendarRef = ref(null)
+const programmaticNavigation = ref(false)
 const sportsLoaded = ref(false)
 const sportIcons = ref<Record<number, string>>({})
 const pendingRange = ref<{ start: Date; end: Date } | null>(null)
@@ -91,6 +106,7 @@ const fetchActivities = async (start, end) => {
   // 1. Identify the focal month for the TrainingLoadCard
   const mid = new Date(start.getTime() + (end.getTime() - start.getTime()) / 2)
   currentCalendarDate.value = new Date(mid.getFullYear(), mid.getMonth(), 1)
+  try { localStorage.setItem(STORAGE_KEY, currentCalendarDate.value.toISOString().split('T')[0]) } catch(e){}
 
   // 2. Create the 30-day "Buffer" for ATL calculation
   const bufferStart = new Date(start)
@@ -138,10 +154,14 @@ const fetchActivities = async (start, end) => {
 
 // --- Calendar Event Handlers ---
 const handleDatesSet = async (arg) => {
+  // Ignore datesSet events triggered by our own programmatic navigation
+  if (programmaticNavigation.value) return;
   if (!sportsLoaded.value) {
     pendingRange.value = { start: arg.start, end: arg.end };
     return;
   }
+  // Persist the current visible range's focal month so returning to calendar restores it
+  try { localStorage.setItem(STORAGE_KEY, new Date(arg.start).toISOString().split('T')[0]) } catch(e){}
   await fetchActivities(arg.start, arg.end);
 };
 
@@ -170,6 +190,8 @@ const renderEvent = (arg: any) => {
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin, bootstrapPlugin],
   themeSystem: 'bootstrap',
+  // Ensure FullCalendar starts at the persisted month (or today's month)
+  initialDate: currentCalendarDate.value.toISOString().split('T')[0],
   initialView: 'dayGridMonth',
   showNonCurrentDates: false,
   fixedWeekCount: false,
@@ -189,6 +211,35 @@ const calendarOptions = computed(() => ({
 
 onMounted(() => {
   loadSports()
+})
+
+// Ensure the FullCalendar view follows the persisted month when available.
+// `initialDate` is only used on first render; use the calendar API to navigate
+// when `currentCalendarDate` changes or once on mount.
+onMounted(async () => {
+  await nextTick()
+  try {
+    if (calendarRef.value && typeof calendarRef.value.getApi === 'function') {
+      programmaticNavigation.value = true
+      calendarRef.value.getApi().gotoDate(currentCalendarDate.value)
+      // clear flag after a tick so any datesSet handler knows this was programmatic
+      await nextTick()
+      programmaticNavigation.value = false
+    }
+  } catch (e) {
+    programmaticNavigation.value = false
+  }
+})
+
+watch(currentCalendarDate, async (d) => {
+  try {
+    if (calendarRef.value && typeof calendarRef.value.getApi === 'function') {
+      programmaticNavigation.value = true
+      calendarRef.value.getApi().gotoDate(d)
+      await nextTick()
+      programmaticNavigation.value = false
+    }
+  } catch (e) { programmaticNavigation.value = false }
 })
 
 const formatToISO = (dateStr: string) => {
