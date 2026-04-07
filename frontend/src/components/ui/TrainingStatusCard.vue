@@ -56,7 +56,8 @@ const statusMap = {
   4: { label: 'Maintaining', color: 'primary', description: 'You are maintaining your current fitness level.' },
   7: { label: 'Productive', color: 'success', description: 'Your fitness is improving—keep it up!' },
   2: { label: 'Overreaching', color: 'warning', description: 'You may be pushing too hard—consider recovery.' },
-  1: { label: 'Unproductive', color: 'danger', description: 'Your training is not producing expected gains.' }
+  1: { label: 'Unproductive', color: 'danger', description: 'Your training is not producing expected gains.' },
+  8: { label: 'Strained', color: 'dark', description: 'Your body is under excessive stress—immediate recovery needed.' }
 }
 
 const status = computed(() => {

@@ -9,6 +9,7 @@ backend/__pycache__
 backend/*.pyc
 backend/config.py
 backend/test_files/
+backend/data/garmin_products.json
 
 # OS
 .DS_Store

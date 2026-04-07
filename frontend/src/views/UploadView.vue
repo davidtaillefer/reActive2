@@ -344,7 +344,7 @@ const uploadFile = async (fileItem: any) => {
         const rawData = data.Activities || {};
         newActivity.hrmfile = fileItem.name;
         newActivity.name = rawData.workout_name || '';
-        newActivity.date = rawData.start_time || '';
+        newActivity.date = rawData.timestamp || '';
         newActivity.sport = rawData.sport || 0;
         newActivity.subsport = rawData.sub_sport || 0;
         newActivity.duration = Math.floor(rawData.total_elapsed_time || 0);        

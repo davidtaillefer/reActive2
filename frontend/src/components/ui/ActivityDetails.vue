@@ -78,7 +78,7 @@ const props = defineProps({
 
 const formattedDate = computed(() => {
   if (props.activity.date) {
-    return new Date(props.activity.date).toLocaleDateString()
+    return new Date(props.activity.date).toLocaleString()
   }
   return ''
 })

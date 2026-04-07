@@ -1,17 +1,7 @@
 import pymysql
-import os
-import json
-import xmltodict
 from .db import exdb
-from flask import Blueprint, jsonify, flash, request, redirect, url_for
-from werkzeug.utils import secure_filename
+from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
-import re
-from garmin_fit_sdk import Decoder, Stream
-import math
-import numbers
-import time
-
 
 activities_bp = Blueprint('activities', __name__)
 
@@ -29,9 +19,7 @@ def activities():
         data = (sport, sport, startdate, enddate)
         cursor.execute(sql, data)
         activities = cursor.fetchall()
-        print(activities)
-        for activity in activities:
-            print(activity['date'], activity['tzoffset'])   
+        for activity in activities:  
             activity['date'] = activity['date'] + timedelta(hours=activity['tzoffset'])
         res = jsonify(activities)
         res.status_code = 200
@@ -74,9 +62,7 @@ def recentactivities(number):
         sql = "SELECT * FROM activities ORDER BY date DESC LIMIT %s"
         cursor.execute(sql, number)
         activities = cursor.fetchall()
-        print(activities)
-        for activity in activities:
-            print(activity['date'], activity['tzoffset'])   
+        for activity in activities: 
             activity['date'] = activity['date'] + timedelta(hours=activity['tzoffset'])
         res = jsonify(activities)
         res.status_code = 200
@@ -94,18 +80,20 @@ def recentactivities(number):
 def createactivity():
     try:
         newrecord = request.get_json()
-        print(newrecord)
         sport = newrecord['sport']
         subsport = newrecord['subsport']
-        format = '%Y-%m-%dT%H:%M:%S.%fZ'
-        try:
-            res = bool(datetime.strptime(newrecord['date'], '%Y-%m-%dT%H:%M:%S.%fZ'))
-        except ValueError:
-            format = '%Y-%m-%dT%H:%M:%SZ'
-        new_format = '%Y-%m-%d %H:%M:%S'
-        d = datetime.strptime(newrecord['date'], format)
-        #d = dateutil.parser.parse(newrecord['date'])
-        nd = d.strftime(new_format)
+        raw = newrecord['date']
+
+        # Handle Z → +00:00 for Python
+        raw = raw.replace("Z", "+00:00")
+
+        dt = datetime.fromisoformat(raw)
+
+        # Convert to UTC (important before storing)
+        dt_utc = dt.astimezone()
+
+        # MySQL DATETIME format
+        nd = dt_utc.strftime('%Y-%m-%d %H:%M:%S')
         
         duration = newrecord['duration']
         intensity = newrecord['intensity']
@@ -164,7 +152,6 @@ def createactivity():
     finally:
         cursor.close() 
         conn.close()
-        print("Done!")
 
 # Update activity record        
     
@@ -172,7 +159,6 @@ def createactivity():
 def updateactivity(id):
     try:
         newrecord = request.get_json()
-        print(newrecord)
         name = newrecord['name']
 
         format = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -240,7 +226,6 @@ def updateactivity(id):
     finally:
         cursor.close() 
         conn.close()
-        print("Activity Update Done!")
 
 @activities_bp.route('/activities/bounds', methods=['GET'])
 def get_activity_bounds():

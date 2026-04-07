@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+#COPY ../backend/fit_sdk/Profile.xlsx backend/fit_sdk/Profile.xlsx
+#RUN python ../backend/scripts/generate_device_map.py
+
 COPY . .
 
 # Environment variables
