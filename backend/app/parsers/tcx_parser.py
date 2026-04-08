@@ -88,15 +88,15 @@ def parse_tcx(file_path) -> Activity:
             if hr is not None:
                 hr_values.append(hr)
 
-            if prev_point and hr is not None:
-                dt = (
-                    datetime.fromisoformat(ts)
-                    - datetime.fromisoformat(prev_point["timestamp"])
-                ).total_seconds()
+            # if prev_point and hr is not None:
+            #     dt = (
+            #         ts
+            #         - ensure_datetime(prev_point["timestamp"])
+            #     ).total_seconds()
 
-                zone = get_hr_zone(hr, max_hr)
-                if zone:
-                    zone_time[zone] += dt
+            #     zone = get_hr_zone(hr, max_hr)
+            #     if zone:
+            #         zone_time[zone] += dt
 
             speed = None
             if prev_point and ts and prev_point["timestamp"]:

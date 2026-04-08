@@ -1,6 +1,6 @@
 <template>
   <BContainer fluid class="p-3">
-   <BRow class="g-3">
+    <BRow class="g-3">
       <BCol>
         <ActivityDetails v-if="activity && Object.keys(activity).length" :activity="activity" :icon-url="iconUrl"
           :sport-name="sportName" />
@@ -15,8 +15,8 @@
       <!-- Route Map (2/3 width on lg+) -->
 
       <BCol cols="12" lg="8" class="d-flex flex-column h-100">
-          <RouteMap v-if="metricsAvailability.position" :hrmData="hrmData" :hoveredPoint="hoveredPoint"
-            @point-hover="onChildHover" @point-leave="onChildLeave" class="flex-grow-1 shadow-sm" />
+        <RouteMap v-if="metricsAvailability.position" :hrmData="hrmData" :hoveredPoint="hoveredPoint"
+          @point-hover="onChildHover" @point-leave="onChildLeave" class="flex-grow-1 shadow-sm" />
         <div v-else class="p-3 bg-white rounded shadow-sm flex-fill d-flex align-items-center justify-content-center">
           <p class="mb-0">No HRM file data available.</p>
         </div>
@@ -50,11 +50,6 @@
           </BRow>
         </div>
       </BCol>
-
-
-
-
-
     </BRow>
     <BRow class="mt-3">
       <BCol cols="12">
@@ -117,9 +112,9 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const hoveredPoint = ref(null)
 
 // Simple debounce implementation
-function debounce(fn, wait){
+function debounce(fn, wait) {
   let t = null
-  function wrapped(...args){
+  function wrapped(...args) {
     if (t) clearTimeout(t)
     t = setTimeout(() => fn(...args), wait)
   }
@@ -128,8 +123,8 @@ function debounce(fn, wait){
 }
 
 const setHover = debounce((p) => { hoveredPoint.value = p }, 32)
-function onChildHover(payload){ setHover(payload) }
-function onChildLeave(){ setHover.cancel(); hoveredPoint.value = null }
+function onChildHover(payload) { setHover(payload) }
+function onChildLeave() { setHover.cancel(); hoveredPoint.value = null }
 
 async function loadSports() {
   try {
@@ -191,7 +186,7 @@ const getFieldSeries = (field: string) => {
   if (!hrmData?.value?.length) return []
 
   return hrmData.value.flatMap(activity =>
-    Object.values(activity.Activities?.Track || {})
+    Object.values(activity.track || {})
       .map((point: any) => point[field])
       .filter(v => v != null)
   )
@@ -201,7 +196,7 @@ const hasMeaningfulData = (field: string) => {
   const series = getFieldSeries(field)
 
   if (!series.length) return false
-
+  console.log(`Checking field "${field}" with series:`, series)
   return series.some(v => typeof v === 'number' && v > 0)
 }
 

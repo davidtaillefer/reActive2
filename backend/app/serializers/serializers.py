@@ -53,6 +53,7 @@ def activity_to_dict(a: Activity):
         "track": [record_to_dict(r) for r in a.track],
         "sets": [set_to_dict(s) for s in a.sets],
         "hr_zones": a.hr_zones,
+        "power_zones": a.power_zones,
 
         "timezone": a.timezone,
         "grade_min": a.grade_min,

@@ -17,6 +17,7 @@ import { ref, computed, watch } from 'vue'
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import MetricCard from './MetricCard.vue';
+import { findNearestPoint } from '@/composables/useHoverMatch'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -50,14 +51,13 @@ const props = defineProps({
   hoveredPoint: { type: Object, default: null }
 });
 const emit = defineEmits(['point-hover','point-leave'])
-import { findNearestPoint } from '@/composables/useHoverMatch'
 const chartRef = ref(null)
 const value1 = ref(props.activity?.avgspeed?.toFixed(1) || 'N/A');
-const value2 = ref(props.hrmData?.[0]?.Activities?.max_speed?.toFixed(1) || 'N/A');
+const value2 = ref(((props.hrmData?.[0]?.max_speed)*3.6).toFixed(1) || 'N/A');
 
 const chartData = computed(() => {
-  const trackData = props.hrmData?.[0]?.Activities?.Track 
-    ? Object.values(props.hrmData[0].Activities.Track) 
+  const trackData = props.hrmData?.[0]?.track 
+    ? Object.values(props.hrmData[0].track) 
     : [];
 
   const startTime = new Date(props.activity?.date).getTime();
@@ -69,7 +69,7 @@ const chartData = computed(() => {
     datasets: [
       {
         label: 'Speed',
-        data: trackData.map(d => d.enhanced_speed || 0),
+        data: trackData.map(d => d.enhanced_speed.toFixed(1)*3.6 || 0),
         borderColor: 'blue',
         backgroundColor: 'rgba(0, 0, 255, 0.1)',
         tension: 0.4,
@@ -88,7 +88,7 @@ const chartOptions = {
       if (elements && elements.length){
         const el = elements[0]
         const idx = el.index
-        const trackData = props.hrmData?.[0]?.Activities?.Track ? Object.values(props.hrmData[0].Activities.Track) : []
+        const trackData = props.hrmData?.[0]?.track ? Object.values(props.hrmData[0].track) : []
         const ts = trackData[idx]?.timestamp || null
         emit('point-hover', { index: idx, timestamp: ts, source: 'SpeedCard' })
       } else {
@@ -107,7 +107,7 @@ const chartOptions = {
     },
     tooltip: {
       callbacks: {
-        label: (context: any) => `${context.parsed.y} bpm`,
+        label: (context: any) => `${context.parsed.y} km/h`,
       },
     },
   },
@@ -150,7 +150,7 @@ watch(() => props.hoveredPoint, (hp) => {
     return
   }
 
-  const trackData = props.hrmData?.[0]?.Activities?.Track ? Object.values(props.hrmData[0].Activities.Track) : []
+  const trackData = props.hrmData?.[0]?.track ? Object.values(props.hrmData[0].track) : []
   const match = findNearestPoint(trackData, hp, { toleranceMs: 1000 })
   if (match){
     const idx = match.index

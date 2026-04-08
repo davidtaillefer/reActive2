@@ -47,6 +47,8 @@ class Record:
     enhanced_speed: Optional[float] = None
     heart_rate: Optional[int] = None
     distance: Optional[float] = None
+    cadence: Optional[int] = None
+    power: Optional[float] = None
 
     # computed fields
     grade: Optional[float] = None

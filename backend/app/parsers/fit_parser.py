@@ -9,7 +9,7 @@ from ..parsers.common import (
     parse_set,
     parse_session,
     parse_record)
-from ..processors import assign_records_to_laps, compute_grades, smooth_grades, build_unified_hr_zones, grade_stats
+from ..processors import assign_records_to_laps, compute_grades, smooth_grades, build_unified_hr_zones, grade_stats, build_unified_power_zones
 from ..utils import to_local_iso, ensure_datetime
 from ..utils import get_timezone, get_device_name
 
@@ -121,6 +121,12 @@ def parse_fit(file_path) -> Activity:
         messages,
         activity.track,
         activity.max_heart_rate or 190
+    )
+    
+    activity.power_zones = build_unified_power_zones(
+        messages,
+        activity.track,
+        203
     )
         
     activity.grade_min, activity.grade_max = grade_stats(activity.track)

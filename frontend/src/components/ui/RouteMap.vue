@@ -169,7 +169,7 @@ const drawRoute = () => {
   const activitiesToDraw = Array.isArray(props.hrmData) ? props.hrmData : [props.hrmData];
 
   activitiesToDraw.forEach((activity, ai) => {
-    const rawTrack = activity?.Activities?.Track || activity?.Track
+    const rawTrack = activity?.track
     if (!rawTrack) return
 
     // keep full unsampled track for matching
@@ -408,6 +408,8 @@ const legendMaxLabel = computed(() => formatMetric(colourMode.value, metricBound
 
 onMounted(() => {
   initMap();
+  console.log('RouteMap: drawRoute called with hrmData', props.hrmData)
+
   drawRoute();
   // Final safeguard for tiles
   setTimeout(() => map?.invalidateSize(), 500);

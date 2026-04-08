@@ -54,11 +54,11 @@ const props = defineProps({
 const emit = defineEmits(['point-hover','point-leave'])
 const chartRef = ref(null)
 const value1 = ref(props.activity?.ascent.toFixed(0) || 'N/A');
-const value2 = ref(props.hrmData?.[0]?.Activities?.max_elevation?.toFixed(0) || 'N/A');
+const value2 = ref(props.hrmData?.[0]?.max_elevation?.toFixed(0) || 'N/A');
 
 const chartData = computed(() => {
-  const trackData = props.hrmData?.[0]?.Activities?.Track 
-    ? Object.values(props.hrmData[0].Activities.Track) 
+  const trackData = props.hrmData?.[0]?.track 
+    ? Object.values(props.hrmData[0].track) 
     : [];
 
   const startTime = new Date(props.activity?.date).getTime();
@@ -89,7 +89,7 @@ const chartOptions = {
       if (elements && elements.length){
         const el = elements[0]
         const idx = el.index
-        const trackData = props.hrmData?.[0]?.Activities?.Track ? Object.values(props.hrmData[0].Activities.Track) : []
+        const trackData = props.hrmData?.[0]?.track ? Object.values(props.hrmData[0].track) : []
         const ts = trackData[idx]?.timestamp || null
         emit('point-hover', { index: idx, timestamp: ts, source: 'ElevationCard' })
       } else {
@@ -151,7 +151,7 @@ watch(() => props.hoveredPoint, (hp) => {
     return
   }
 
-  const trackData = props.hrmData?.[0]?.Activities?.Track ? Object.values(props.hrmData[0].Activities.Track) : []
+  const trackData = props.hrmData?.[0]?.track ? Object.values(props.hrmData[0].track) : []
   const match = findNearestPoint(trackData, hp, { toleranceMs: 1000 })
   if (match){
     const idx = match.index

@@ -141,6 +141,8 @@ def build_unified_hr_zones(messages, records, max_hr):
     # 3. Fallback to records
     return compute_zones_from_records(records, max_hr)
 
+########## Functions for power zones (similar structure to HR zones) ##########
+
 def compute_zones_from_records(records, max_hr):
     zone_time = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
     prev = None
@@ -156,5 +158,141 @@ def compute_zones_from_records(records, max_hr):
         prev = r
 
     return normalize_tcx_hr_zones(zone_time, max_hr)
+
+def parse_power_zones_target(messages):
+    for msg in messages.get("time_in_zone_mesgs", []):
+        if msg.get("power_zone_high_boundary"):
+            return {
+                "power_zone_high_boundary": msg.get("power_zone_high_boundary"),
+                "functional_threshold_power": msg.get("functional_threshold_power"),
+            }
+    return {}
+
+
+def parse_power_zone_summary(messages):
+    for msg in messages.get("time_in_zone_mesgs", []):
+        if msg.get("time_in_power_zone"):
+            return {
+                "time_in_power_zone": msg.get("time_in_power_zone"),
+                "timestamp": msg.get("timestamp"),
+            }
+    return {}
+
+def normalize_fit_power_zones(messages):
+    zones_target = parse_power_zones_target(messages)
+    zone_summary = parse_power_zone_summary(messages)
+
+    boundaries = zones_target.get("power_zone_high_boundary") or []
+    times = zone_summary.get("time_in_power_zone") or []
+
+    if not boundaries or not times:
+        return None
+
+    zones = []
+    total_time = sum(times)
+
+    for i, t in enumerate(times):
+        z_min = 0 if i == 0 else boundaries[i - 1]
+        z_max = boundaries[i] if i < len(boundaries) else None
+
+        zones.append({
+            "zone": i + 1,
+            "min": z_min,
+            "max": z_max,
+            "time": t,
+            "percent": (t / total_time * 100) if total_time > 0 else 0
+        })
+
+    return {
+        "type": "power",
+        "source": "device",
+        "calc_method": "percent_ftp",
+
+        "ftp": zones_target.get("functional_threshold_power"),
+
+        "zones": zones,
+        "total_time": total_time
+    }
+
+def normalize_power_zones_from_totals(zone_time, ftp):
+    if not zone_time:
+        return None
+
+    total_time = sum(zone_time.values())
+
+    bounds = [0.55, 0.75, 0.9, 1.05, 1.2]
+
+    zones = []
+    prev = 0
+
+    for i, pct in enumerate(bounds):
+        zones.append({
+            "zone": i + 1,
+            "min": prev * ftp,
+            "max": pct * ftp,
+            "time": zone_time.get(i + 1, 0),
+            "percent": (
+                zone_time.get(i + 1, 0) / total_time * 100
+                if total_time > 0 else 0
+            )
+        })
+        prev = pct
+
+    # Zone 6+
+    zones.append({
+        "zone": 6,
+        "min": bounds[-1] * ftp,
+        "max": None,
+        "time": zone_time.get(6, 0),
+        "percent": (
+            zone_time.get(6, 0) / total_time * 100
+            if total_time > 0 else 0
+        )
+    })
+
+    return {
+        "type": "power",
+        "source": "computed",
+        "calc_method": "percent_ftp",
+
+        "ftp": ftp,
+
+        "zones": zones,
+        "total_time": total_time
+    }
+    
+def compute_power_zones_from_records(records, ftp):
+    if not ftp:
+        return None
+
+    zone_time = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
+    prev = None
+
+    for r in records:
+        if prev and r.timestamp and prev.timestamp:
+            dt = (r.timestamp - prev.timestamp).total_seconds()
+
+            zone = get_power_zone(r.power, ftp)
+            if zone:
+                zone_time[zone] += dt
+
+        prev = r
+
+    return normalize_power_zones_from_totals(zone_time, ftp)
+
+def build_unified_power_zones(messages, records, ftp):
+    # 1. Try FIT device zones
+    fit_zones = normalize_fit_power_zones(messages)
+    if fit_zones:
+        return fit_zones
+
+    # 2. (optional future) precomputed zones
+    if hasattr(messages, "power_zone_time"):
+        return normalize_power_zones_from_totals(messages.power_zone_time, ftp)
+
+    # 3. Fallback
+    return compute_power_zones_from_records(records, ftp)
+
+
     
 

@@ -70,6 +70,8 @@ def parse_record(msg) -> Optional[Record]:
             enhanced_speed=msg.get("enhanced_speed"),
             heart_rate=msg.get("heart_rate"),
             distance=msg.get("distance"),
+            cadence=msg.get("cadence"),
+            power=msg.get("power"),
         )
     except:
         return None

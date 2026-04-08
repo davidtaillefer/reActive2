@@ -280,13 +280,13 @@ const openWorkout = (id: number) => {
 
 const hasGpsData = (hrmData: any) => {
   // Access the Track object from your specific HRM data structure
-  const track = hrmData?.Activities?.Track;
+  const track = hrmData?.track;
   if (!track) return false;
 
   // Check if any point in the track has valid position data
   // Garmin track points for non-GPS activities usually omit these fields
   return Object.values(track).some((point: any) =>
-    point.position_lat !== undefined && point.position_long !== undefined
+    point.position_lat !== null && point.position_long !== null
   );
 };
 

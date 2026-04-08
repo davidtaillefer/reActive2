@@ -23,29 +23,39 @@ const props = defineProps({
   hrmData: { type: Object, required: true }
 })
 
-const zones = computed(() => props.hrmData?.Activities?.Zones || {})
-const maxHr = computed(() => zones.value.max_heart_rate || 'N/A')
-const hasData = computed(() => zones.value.time_in_hr_zone?.length > 0)
+const zones = computed(() =>
+  (props.hrmData?.hr_zones?.zones || [])
+    .slice()
+    .sort((a, b) => a.zone - b.zone)
+)
+const maxHr = computed(() => props.hrmData?.hr_zones?.max_hr || 'N/A')
+
+const hasData = computed(() =>
+  Array.isArray(zones.value) && zones.value.length > 0
+)
 
 // Colour Mapping: Z1: Light Blue, Z2: Dark Blue, Z3: Green, Z4: Yellow, Z5: Orange, Z6+: Red
 const hrColours = ['#add8e6', '#00008b', '#28a745', '#ffc107', '#fd7e14', '#dc3545'];
 
 const chartData = computed(() => {
-  const timeData = zones.value.time_in_hr_zone || []
-  const boundaries = zones.value.hr_zone_high_boundary || []
-  
-  const labels = timeData.map((_, i) => {
-    if (i === 0) return `Zone 1 (< ${boundaries[0]})`
-    if (i >= boundaries.length) return `Zone ${i+1} (> ${boundaries[boundaries.length - 1]})`
-    return `Zone ${i+1} (${boundaries[i-1]}-${boundaries[i]})`
+  if (!zones.value.length) return { labels: [], datasets: [] }
+
+  const labels = zones.value.map(z => {
+    if (z.min == null && z.max != null) {
+      return `Zone ${z.zone} (< ${Math.round(z.max)})`
+    }
+    if (z.max == null && z.min != null) {
+      return `Zone ${z.zone} (> ${Math.round(z.min)})`
+    }
+    return `Zone ${z.zone} (${Math.round(z.min)}–${Math.round(z.max)} bpm)`
   })
 
   return {
     labels,
     datasets: [{
       label: 'Minutes',
-      data: timeData.map(s => (s / 60).toFixed(1)),
-      backgroundColor: hrColours,
+      data: zones.value.map(z => Number((z.time / 60).toFixed(1))),
+      backgroundColor: hrColours.slice(0, zones.value.length),
       borderRadius: 4
     }]
   }

@@ -23,29 +23,41 @@ const props = defineProps({
   hrmData: { type: Object, required: true }
 })
 
-const zones = computed(() => props.hrmData?.Activities?.Zones || {})
-const ftpValue = computed(() => zones.value.functional_threshold_power || 'N/A')
-const hasData = computed(() => zones.value.time_in_power_zone?.length > 0)
+const zones = computed(() => (props.hrmData?.power_zones?.zones || [])
+  .slice()
+  .sort((a, b) => a.zone - b.zone)
+)
+const ftpValue = computed(() => props.hrmData?.power_zones?.ftp || 'N/A')
+
+const hasData = computed(() =>
+  Array.isArray(zones.value) && zones.value.length > 0
+)
 
 // Colour Mapping: Z1-Z5 as requested, Z6: Dark Red, Z7: Purple
 const pwrColours = ['#add8e6', '#00008b', '#28a745', '#ffc107', '#fd7e14', '#8b0000', '#800080'];
 
 const chartData = computed(() => {
-  const timeData = zones.value.time_in_power_zone || []
-  const boundaries = zones.value.power_zone_high_boundary || []
+  if (!zones.value.length) return { labels: [], datasets: [] }
+  //const timeData = zones.value.time_in_power_zone || []
+  //const boundaries = zones.value.power_zone_high_boundary || []
   
-  const labels = timeData.map((_, i) => {
-    if (i === 0) return `Z1 (Active Recovery)`
-    if (i >= boundaries.length - 1) return `Z${i+1} (Neuromuscular)`
-    return `Z${i+1} (${boundaries[i]}-${boundaries[i+1]} W)`
+  const labels = zones.value.map(z => {
+    console.log('Zone data:', z)
+    if (z.min == null && z.max != null) {
+      return `Zone ${z.zone} (< ${Math.round(z.max)})`
+    }
+    if (z.max == null && z.min != null) {
+      return `Zone ${z.zone} (> ${Math.round(z.min)})`
+    }
+    return `Zone ${z.zone} (${Math.round(z.min)}–${Math.round(z.max)} bpm)`
   })
 
   return {
     labels,
     datasets: [{
       label: 'Minutes',
-      data: timeData.map(s => (s / 60).toFixed(1)),
-      backgroundColor: pwrColours,
+      data: zones.value.map(z => Number((z.time / 60).toFixed(1))),
+      backgroundColor: pwrColours.slice(0, zones.value.length),
       borderRadius: 4
     }]
   }

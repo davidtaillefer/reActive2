@@ -28,11 +28,11 @@ const props = defineProps({
   hrmData: {type: Array, required: true},
 });
 const value1 = ref(props.activity?.avgcadence?.toFixed(0) || 'N/A');
-const value2 = ref(props.hrmData?.[0]?.Activities?.max_cadence?.toFixed(0) || 'N/A');
+const value2 = ref(props.hrmData?.[0]?.max_cadence?.toFixed(0) || 'N/A');
 
 const chartData = computed(() => {
-  const trackData = props.hrmData?.[0]?.Activities?.Track 
-    ? Object.values(props.hrmData[0].Activities.Track) 
+  const trackData = props.hrmData?.[0]?.track 
+    ? Object.values(props.hrmData[0].track) 
     : [];
 
   const startTime = new Date(props.activity?.date).getTime();
