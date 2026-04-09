@@ -12,9 +12,9 @@ The app was originally meant to move away from storing personal fitness data on 
 
 ## 🎥 Screenshots & Demo
 
-### 🗺️ Route Map with Metric Coloring
+### 🗺️ Route Map with Metric Colouring
 
-Visualize activities with dynamic coloring based on grade, heart rate, speed, or power.
+Visualize activities with dynamic colouring based on grade, heart rate, speed, or power.
 
 ![Route Map Demo](./docs/gifs/route-map.gif)
 
