@@ -3,10 +3,7 @@
     <BContainer fluid class="d-flex align-items-center">
 
       <!-- Brand -->
-      <BNavbarBrand
-        class="me-3"
-        style="color: #8e44ad; font-weight: bold; font-size: 1.2rem;"
-      >
+      <BNavbarBrand class="me-3" style="color: #8e44ad; font-weight: bold; font-size: 1.2rem;">
         reActive
       </BNavbarBrand>
 
@@ -24,13 +21,11 @@
 
       <!-- Sync Button (Far Right) -->
       <div class="ms-auto d-flex align-items-center gap-2">
-        <BButton 
-          variant="outline-info" 
-          size="sm" 
-          @click="handleSync" 
-          :disabled="isSyncing"
-          class="d-flex align-items-center gap-2"
-        >
+        <router-link to="/settings" class="text-light d-flex align-items-center nav-link p-0" title="Settings">
+          <IBiGear />
+        </router-link>
+        <BButton variant="outline-info" size="sm" @click="handleSync" :disabled="isSyncing"
+          class="d-flex align-items-center gap-2">
           <BSpinner v-if="isSyncing" small />
           <i v-else class="bi bi-arrow-repeat"></i>
           {{ isSyncing ? 'Syncing...' : 'Sync' }}
@@ -57,9 +52,9 @@ const handleSync = async () => {
     const response = await fetch(`${apiBaseUrl}sync/days/7`, {
       method: 'GET'
     })
-    
+
     if (!response.ok) throw new Error('Sync failed')
-    
+
     const data = await response.json()
     // sync complete
     // Optional: add a success toast or alert here

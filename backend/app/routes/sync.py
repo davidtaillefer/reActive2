@@ -8,7 +8,7 @@ from datetime import timedelta
 from getpass import getpass
 from pathlib import Path
 from typing import Any
-from .db import exdb
+from ..db import exdb
 from flask import Blueprint, jsonify
 from pymysql import Error
 from datetime import timedelta, date

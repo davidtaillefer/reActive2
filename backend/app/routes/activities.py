@@ -1,5 +1,5 @@
 import pymysql
-from .db import exdb
+from ..db import exdb
 from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
 

@@ -196,7 +196,6 @@ const hasMeaningfulData = (field: string) => {
   const series = getFieldSeries(field)
 
   if (!series.length) return false
-  console.log(`Checking field "${field}" with series:`, series)
   return series.some(v => typeof v === 'number' && v > 0)
 }
 

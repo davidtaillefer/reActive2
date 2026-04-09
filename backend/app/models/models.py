@@ -128,3 +128,4 @@ class Activity:
     grade_max: Optional[float] = None     
     
     device: Optional[str] = None
+    workout_name: Optional[str] = None

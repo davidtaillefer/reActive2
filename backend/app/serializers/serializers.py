@@ -59,7 +59,8 @@ def activity_to_dict(a: Activity):
         "grade_min": a.grade_min,
         "grade_max": a.grade_max,
         
-        "device": a.device
+        "device": a.device,
+        "workout_name": a.workout_name
     }
     
 def record_to_dict(r):

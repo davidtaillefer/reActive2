@@ -52,6 +52,7 @@ declare module 'vue' {
     IBiFileEarmarkText: typeof import('~icons/bi/file-earmark-text')['default']
     IBiFire: typeof import('~icons/bi/fire')['default']
     IBiFlower1: typeof import('~icons/bi/flower1')['default']
+    IBiGear: typeof import('~icons/bi/gear')['default']
     IBiGraph: typeof import('~icons/bi/graph')['default']
     IBiGraphDown: typeof import('~icons/bi/graph-down')['default']
     IBiHeart: typeof import('~icons/bi/heart')['default']

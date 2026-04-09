@@ -6,10 +6,10 @@ import xmltodict
 from collections import deque
 
 from typing import Optional, List, Dict
-from .parsers.fit_parser import parse_fit
-from .parsers.tcx_parser import parse_tcx
-from .processors.activity import finalize_activity
-from .serializers import activity_to_dict
+from ..parsers.fit_parser import parse_fit
+from ..parsers.tcx_parser import parse_tcx
+from ..processors.activity import finalize_activity
+from ..serializers import activity_to_dict
 from flask import Blueprint
 from garmin_fit_sdk import Decoder, Stream
 

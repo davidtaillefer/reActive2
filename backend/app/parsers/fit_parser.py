@@ -99,6 +99,8 @@ def parse_fit(file_path) -> Activity:
     activity.lengths = lengths
     activity.sets = sets
 
+    first_point = None
+    last_point = None
 
     # --- Process records ---
     for msg in messages["record_mesgs"]:
@@ -107,10 +109,19 @@ def parse_fit(file_path) -> Activity:
             continue
 
         prev = record
+        
+        if not first_point:
+            first_point = record
+            last_point = record
+        
         records.append(record)
 
     # --- Add flat track ---
     activity.track = records
+    activity.start_position_lat = first_point.position_lat
+    activity.start_position_long = first_point.position_long
+    activity.end_position_lat = last_point.position_lat
+    activity.end_position_long = last_point.position_long
     
     assign_records_to_laps(activity.track, activity.laps)
 
@@ -128,12 +139,18 @@ def parse_fit(file_path) -> Activity:
         activity.track,
         203
     )
-        
+    
+    for i, workout_step in enumerate(messages.get("workout_mesgs", [])):
+        for field_name in workout_step:
+                field_value = workout_step[field_name]
+                if field_name == "wkt_name":
+                    activity.workout_name = field_value
+
     activity.grade_min, activity.grade_max = grade_stats(activity.track)
 
     # timezone from first valid point
     if records:
-        tz_name = get_timezone(records[0].position_lat, records[0].position_long)
+        tz_name = get_timezone(activity.start_position_lat, activity.start_position_long)
         activity.timezone = tz_name
         
     device_number = None
@@ -146,6 +163,7 @@ def parse_fit(file_path) -> Activity:
                 device_number = msg[field_name]
             if field_name == "manufacturer":
                 manufacturer = msg[field_name]
+                
     device_name = get_device_name(manufacturer, device_number)
     activity.device = device_name     
     

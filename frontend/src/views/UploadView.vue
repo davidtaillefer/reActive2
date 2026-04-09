@@ -337,37 +337,36 @@ const uploadFile = async (fileItem: any) => {
     try {
       const res = await fetch(apiBaseUrl + `hrm/${fileItem.name}`);
       if (res.ok) {
-        const data = await res.json();
-        hrmData.value.push(data);
+        const rawData = await res.json() || {};
+        hrmData.value.push(rawData);
         // Fetched HRM data
         const newActivity = createActivityTemplate();
-        const rawData = data.Activities || {};
         newActivity.hrmfile = fileItem.name;
         newActivity.name = rawData.workout_name || '';
-        newActivity.date = rawData.timestamp || '';
+        newActivity.date = rawData.start_time || '';
         newActivity.sport = rawData.sport || 0;
         newActivity.subsport = rawData.sub_sport || 0;
         newActivity.duration = Math.floor(rawData.total_elapsed_time || 0);        
-        newActivity.intensity = data.Activities.intensity || '';
-        newActivity.distance = data.Activities.total_distance || 0;
-        newActivity.avgspeed = data.Activities.avg_speed || 0;
-        newActivity.latitude = data.Activities.start_position_lat || 0.0;
-        newActivity.longitude = data.Activities.start_position_long || 0.0;
-        //newActivity.secondhrmfile = data.Activities.secondhrmfile || '';
-        newActivity.equipment = data.Activities.equipment || '';
-        newActivity.heartrate = data.Activities.avg_heart_rate || 0;
-        //newActivity.comments = data.Activities.comments || '';
-        newActivity.avgcadence = data.Activities.avg_cadence || 0;
-        newActivity.ascent = data.Activities.total_ascent || 0;
-        newActivity.calories = data.Activities.total_calories || 0;
-        newActivity.avgpower = data.Activities.avg_power || 0;
-        newActivity.device = data.Activities.device || '';
-        newActivity.ate = data.Activities.total_training_effect || 0.0;
-        newActivity.ante = data.Activities.total_anaerobic_training_effect || 0.0;
-        newActivity.training_load = data.Activities.training_load_peak || 0;
-        newActivity.workout_feel = data.Activities.workout_feel || 0;
-        newActivity.workout_rpe = data.Activities.workout_rpe || 0;
-        newActivity.offset = data.Activities.tzoffset || 0;
+        newActivity.intensity = rawData.intensity || '';
+        newActivity.distance = rawData.total_distance || 0;
+        newActivity.avgspeed = rawData.avg_speed || 0;
+        newActivity.latitude = rawData.start_position_lat || null;
+        newActivity.longitude = rawData.start_position_long || null;
+        //newActivity.secondhrmfile = rawData.secondhrmfile || '';
+        newActivity.equipment = rawData.equipment || '';
+        newActivity.heartrate = rawData.avg_heart_rate || 0;
+        //newActivity.comments = rawData.comments || '';
+        newActivity.avgcadence = rawData.avg_cadence || 0;
+        newActivity.ascent = rawData.total_ascent || 0;
+        newActivity.calories = rawData.total_calories || 0;
+        newActivity.avgpower = rawData.avg_power || 0;
+        newActivity.device = rawData.device || '';
+        newActivity.ate = rawData.total_training_effect || 0.0;
+        newActivity.ante = rawData.total_anaerobic_training_effect || 0.0;
+        newActivity.training_load = rawData.training_load_peak || 0;
+        newActivity.workout_feel = rawData.workout_feel || 0;
+        newActivity.workout_rpe = rawData.workout_rpe || 0;
+        newActivity.offset = rawData.tzoffset || 0;
 
 
     // 1. Get the Garmin text from the FIT data

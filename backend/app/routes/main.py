@@ -2,7 +2,7 @@ import pymysql
 import os
 import json
 import xmltodict
-from .db import exdb
+from ..db import exdb
 from flask import Blueprint, jsonify, flash, request, redirect, url_for
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
