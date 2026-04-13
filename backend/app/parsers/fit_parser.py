@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 from collections import deque
+from app.services.muscle_service import compute_muscle_load, load_exercise_map, update_muscle_fatigue
 from garmin_fit_sdk import Decoder, Stream
 from ..models import Activity
 from ..parsers.common import (
@@ -12,6 +13,8 @@ from ..parsers.common import (
 from ..processors import assign_records_to_laps, compute_grades, smooth_grades, build_unified_hr_zones, grade_stats, build_unified_power_zones
 from ..utils import to_local_iso, ensure_datetime
 from ..utils import get_timezone, get_device_name
+from ..utils.user_utils import get_user_uuid
+
 
 def parse_fit(file_path) -> Activity:
     stream = Stream.from_file(file_path)
@@ -50,6 +53,7 @@ def parse_fit(file_path) -> Activity:
         s = parse_set(msg)
         if s:
             sets.append(s)
+            
 
     # --- Add sessions ---
     for msg in messages.get("session_mesgs", []):
@@ -98,6 +102,14 @@ def parse_fit(file_path) -> Activity:
     activity.laps = laps  # from earlier processing
     activity.lengths = lengths
     activity.sets = sets
+    
+    user_id = get_user_uuid()
+    print("User id:", user_id)
+    
+    exercise_map = load_exercise_map()
+    muscle_loads = compute_muscle_load(activity.sets, exercise_map)
+    activity.muscles = {"load": muscle_loads,
+                        "fatigue": update_muscle_fatigue(user_id, muscle_loads)}
 
     first_point = None
     last_point = None

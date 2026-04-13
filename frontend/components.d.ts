@@ -67,6 +67,7 @@ declare module 'vue' {
     MetricCard: typeof import('./src/components/ui/MetricCard.vue')['default']
     MinHrCard: typeof import('./src/components/ui/MinHrCard.vue')['default']
     MinHrComponent: typeof import('./src/components/ui/MinHrComponent.vue')['default']
+    MuscleMap: typeof import('./src/components/ui/MuscleMap.vue')['default']
     PowerCard: typeof import('./src/components/ui/PowerCard.vue')['default']
     PowerZonesCard: typeof import('./src/components/ui/PowerZonesCard.vue')['default']
     RadialMetricCard: typeof import('./src/components/ui/RadialMetricCard.vue')['default']

@@ -72,13 +72,14 @@ const expandedLaps = ref(new Set());
 
 const laps = computed(() => {
   const data = Array.isArray(props.hrmData) ? props.hrmData[0] : props.hrmData;
-  const rawLaps = data?.Activities?.Lap;
+  const rawLaps = data?.laps;
+  console.log("Laps: ", rawLaps)
   return rawLaps ? Object.values(rawLaps) : [];
 });
 
-const hasLengths = (lap: any) => lap.Length && Object.keys(lap.Length).length > 0;
+const hasLengths = (lap: any) => lap.lengths && Object.keys(lap.lengths).length > 0;
 
-const getLengths = (lap: any) => Object.values(lap.Length);
+const getLengths = (lap: any) => Object.values(lap.length);
 
 const toggleLap = (index: number) => {
   if (expandedLaps.value.has(index)) {

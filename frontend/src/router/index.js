@@ -8,6 +8,7 @@ import SeasonView from '../views/SeasonView.vue'
 import AnalysisView from '../views/ActivityView.vue'
 import UploadView from '../views/UploadView.vue'        
 import DashboardView from '../views/DashboardView.vue'
+import PerformanceView from '../views/PerformanceView.vue' 
 
 const routes = [
   {
@@ -23,7 +24,8 @@ const routes = [
       { path: 'upload', name: 'Upload', component: () => import('../views/UploadView.vue') },
       { path: '/activity/:id', name: 'activity', component: () => import('../views/ActivityView.vue'), props: true,},
       { path: '/activity/:id/edit', name: 'activity-edit', component: () => import('@/views/ActivityEdit.vue'),},
-      { path: 'settings', name: 'Settings', component: () => import('../views/SettingsView.vue') }
+      { path: 'settings', name: 'Settings', component: () => import('../views/SettingsView.vue') },
+      { path: '/performance', name: 'Condition', component: PerformanceView}
     ]
   }
 ]

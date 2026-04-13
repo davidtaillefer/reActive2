@@ -1,4 +1,5 @@
 <template>
+    <div class="activity-view">
   <BContainer fluid class="p-3">
     <BRow class="g-3">
       <BCol>
@@ -12,14 +13,25 @@
 
     <!-- Main Content Section -->
     <BRow class="g-3" style="height: calc(100vh - 300px);">
-      <!-- Route Map (2/3 width on lg+) -->
-
       <BCol cols="12" lg="8" class="d-flex flex-column h-100">
+
+        <!-- Route Map -->
         <RouteMap v-if="metricsAvailability.position" :hrmData="hrmData" :hoveredPoint="hoveredPoint"
           @point-hover="onChildHover" @point-leave="onChildLeave" class="flex-grow-1 shadow-sm" />
+
+        <!-- Muscle Map -->
+        <MuscleMap v-else-if="metricsAvailability.muscles" :muscleData="muscleData" :hoveredPoint="hoveredPoint"
+          @point-hover="onChildHover" @point-leave="onChildLeave" class="flex-grow-1 shadow-sm" />
+
+        <!-- Fallback -->
         <div v-else class="p-3 bg-white rounded shadow-sm flex-fill d-flex align-items-center justify-content-center">
-          <p class="mb-0">No HRM file data available.</p>
+          <p class="mb-0">
+            {{ activity.sport === 'strength'
+              ? 'No muscle data available.'
+              : 'No route data available.' }}
+          </p>
         </div>
+
       </BCol>
 
       <!-- Metrics Section (1/3 width on lg+) -->
@@ -35,7 +47,7 @@
             :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
           <PowerCard v-if="metricsAvailability.power" :activity="activity" :hrmData="hrmData"
             :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
-          <HRZonesCard :hrmData="hrmData[0]" />
+          <HRZonesCard v-if="metricsAvailability.heartRate" :hrmData="hrmData[0]" />
           <PowerZonesCard v-if="metricsAvailability.power" :hrmData="hrmData[0]" />
           <BRow class="mt-3">
             <BCol md="6">
@@ -73,6 +85,7 @@
       </BCol>
     </BRow>
   </BContainer>"
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -84,6 +97,7 @@ import { BContainer, BRow, BCol, BCard, BCardBody } from 'bootstrap-vue-next'
 
 import ActivityDetails from '@/components/ui/ActivityDetails.vue'
 import RouteMap from '@/components/ui/RouteMap.vue'
+import MuscleMap from '@/components/ui/MuscleMap.vue'
 import HeartRateCard from '@/components/ui/HeartRateCard.vue'
 import SpeedCard from '@/components/ui/SpeedCard.vue'
 import ElevationCard from '@/components/ui/ElevationCard.vue'
@@ -104,6 +118,7 @@ const activity = ref(
 const iconUrl = ref('')
 const sportName = ref('')
 const hrmData = ref([]) // Initialize as an array to hold multiple HRM datasets if needed
+const muscleData = ref(null)
 const hrmfile = ref(activity.value.hrmfile || '')
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
@@ -168,6 +183,7 @@ onMounted(async () => {
       if (res.ok) {
         const data = await res.json()
         hrmData.value = [JSON.parse(JSON.stringify(data))]
+        muscleData.value = hrmData.value[0].muscles
       } else {
         console.error('failed to fetch HRM data', res.status)
       }
@@ -177,9 +193,6 @@ onMounted(async () => {
   }
 
   await loadSports()
-
-  // development-only programmatic hover removed
-  // ActivityView mounted (dev debug removed)
 })
 
 const getFieldSeries = (field: string) => {
@@ -206,7 +219,8 @@ const metricsAvailability = computed(() => ({
   speed: hasMeaningfulData('enhanced_speed'),
   elevation: hasMeaningfulData('enhanced_altitude'),
   distance: hasMeaningfulData('distance'),
-  position: hasMeaningfulData('position_lat')
+  position: hasMeaningfulData('position_lat'),
+  muscles: !!muscleData.value && Object.keys(muscleData.value).length > 0
 }))
 
 </script>

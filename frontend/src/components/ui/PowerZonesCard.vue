@@ -3,6 +3,8 @@
     title="Time in Power Zones" 
     icon="i-bi-lightning-charge" 
     icon-color="text-warning"
+    value1=""
+    unit1=""
     :value2="ftpValue.toString()"
     unit2="FTP Watts"
   >
@@ -42,7 +44,6 @@ const chartData = computed(() => {
   //const boundaries = zones.value.power_zone_high_boundary || []
   
   const labels = zones.value.map(z => {
-    console.log('Zone data:', z)
     if (z.min == null && z.max != null) {
       return `Zone ${z.zone} (< ${Math.round(z.max)})`
     }

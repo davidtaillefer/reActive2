@@ -3,7 +3,9 @@
     :title="title" 
     :icon="icon" 
     :icon-color="iconColor"
+    value1=""
     :value2="benefit"
+    unit1=""
     unit2=""
   >
     <div class="gauge-container">

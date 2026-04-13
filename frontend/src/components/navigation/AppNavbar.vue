@@ -12,6 +12,7 @@
         <BNavbarNav class="align-items-center">
           <BNavItem to="/dashboard" tag="router-link">Dashboard</BNavItem>
           <BNavItem to="/" tag="router-link">Calendar</BNavItem>
+          <BNavItem to="/performance" tag="router-link">Condition</BNavItem>
           <BNavItem to="/map" tag="router-link">Map</BNavItem>
           <BNavItem to="/season" tag="router-link">Season</BNavItem>
           <BNavItem to="/analysis" tag="router-link">Analysis</BNavItem>

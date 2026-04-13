@@ -3,6 +3,8 @@
     title="Time in HR Zones" 
     icon="i-bi-heart-pulse" 
     icon-color="text-danger"
+    value1=""
+    unit1=""
     :value2="maxHr.toString()"
     unit2="Max BPM"
   >

@@ -14,8 +14,8 @@
         <tbody>
           <tr v-for="(set, index) in sets" :key="index">
             <td>{{ index + 1 }}</td>
-            <td class="text-capitalize">{{ set.category || 'Strength' }}</td>
-            <td>{{ set.repetitions || 0 }}</td>
+            <td class="text-capitalize">{{ set.exercise_name || 'Strength' }}</td>
+            <td>{{ set.reps || 0 }}</td>
             <td>{{ set.weight || 0 }} kg</td>
             <td>{{ formatSeconds(set.duration) }}</td>
           </tr>
@@ -34,7 +34,7 @@ const props = defineProps({
 
 const sets = computed(() => {
   const data = Array.isArray(props.hrmData) ? props.hrmData[0] : props.hrmData;
-  const rawSets = data?.Activities?.Sets;
+  const rawSets = data?.sets;
   
   return rawSets ? Object.values(rawSets) : [];
 });

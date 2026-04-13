@@ -408,7 +408,6 @@ const legendMaxLabel = computed(() => formatMetric(colourMode.value, metricBound
 
 onMounted(() => {
   initMap();
-  console.log('RouteMap: drawRoute called with hrmData', props.hrmData)
 
   drawRoute();
   // Final safeguard for tiles

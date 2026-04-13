@@ -3,6 +3,10 @@
     title="Weekly Training" 
     icon="i-bi-bar-chart-steps" 
     icon-color="text-success"
+    value1=""
+    unit1=""
+    value2=""
+    unit2=""
   >
     <!-- Use a key to force re-render when data length changes -->
     <Bar 

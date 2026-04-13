@@ -129,3 +129,5 @@ class Activity:
     
     device: Optional[str] = None
     workout_name: Optional[str] = None
+    
+    muscles: Optional[Dict[str, float]] = None  # muscle name -> load
