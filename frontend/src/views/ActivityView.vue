@@ -16,11 +16,11 @@
       <BCol cols="12" lg="8" class="d-flex flex-column h-100">
 
         <!-- Route Map -->
-        <RouteMap v-if="metricsAvailability.position" :hrmData="hrmData" :hoveredPoint="hoveredPoint"
+        <RouteMap v-if="metricsAvailability && metricsAvailability.position" :hrmData="hrmData" mode="load" :hoveredPoint="hoveredPoint"
           @point-hover="onChildHover" @point-leave="onChildLeave" class="flex-grow-1 shadow-sm" />
 
         <!-- Muscle Map -->
-        <MuscleMap v-else-if="metricsAvailability.muscles" :muscleData="muscleData" :hoveredPoint="hoveredPoint"
+        <MuscleMap v-else-if="metricsAvailability && metricsAvailability.muscles" :muscleData="muscleData" :showLegend="true" :hoveredPoint="hoveredPoint"
           @point-hover="onChildHover" @point-leave="onChildLeave" class="flex-grow-1 shadow-sm" />
 
         <!-- Fallback -->
@@ -37,18 +37,18 @@
       <!-- Metrics Section (1/3 width on lg+) -->
       <BCol lg="4" class="d-flex flex-column h-100">
         <div class="flex-grow-1 overflow-auto d-flex flex-column gap-3 pe-2">
-          <HeartRateCard v-if="metricsAvailability.heartRate" :activity="activity" :hrmData="hrmData"
+          <HeartRateCard v-if="metricsAvailability && metricsAvailability.heartRate" :activity="activity" :hrmData="hrmData"
             :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
-          <SpeedCard v-if="metricsAvailability.speed" :activity="activity" :hrmData="hrmData"
+          <SpeedCard v-if="metricsAvailability && metricsAvailability.speed" :activity="activity" :hrmData="hrmData"
             :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
-          <ElevationCard v-if="metricsAvailability.elevation" :activity="activity" :hrmData="hrmData"
+          <ElevationCard v-if="metricsAvailability && metricsAvailability.elevation" :activity="activity" :hrmData="hrmData"
             :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
-          <CadenceCard v-if="metricsAvailability.cadence" :activity="activity" :hrmData="hrmData"
+          <CadenceCard v-if="metricsAvailability && metricsAvailability.cadence" :activity="activity" :hrmData="hrmData"
             :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
-          <PowerCard v-if="metricsAvailability.power" :activity="activity" :hrmData="hrmData"
+          <PowerCard v-if="metricsAvailability && metricsAvailability.power" :activity="activity" :hrmData="hrmData"
             :hoveredPoint="hoveredPoint" @point-hover="onChildHover" @point-leave="onChildLeave" />
-          <HRZonesCard v-if="metricsAvailability.heartRate" :hrmData="hrmData[0]" />
-          <PowerZonesCard v-if="metricsAvailability.power" :hrmData="hrmData[0]" />
+          <HRZonesCard v-if="metricsAvailability && metricsAvailability.heartRate" :hrmData="hrmData[0]" />
+          <PowerZonesCard v-if="metricsAvailability && metricsAvailability.power" :hrmData="hrmData[0]" />
           <BRow class="mt-3">
             <BCol md="6">
               <TrainingEffectCard title="Aerobic TE" :score="Number(activity.ate)" :benefit="activity.intensity"
@@ -195,33 +195,10 @@ onMounted(async () => {
   await loadSports()
 })
 
-const getFieldSeries = (field: string) => {
-  if (!hrmData?.value?.length) return []
-
-  return hrmData.value.flatMap(activity =>
-    Object.values(activity.track || {})
-      .map((point: any) => point[field])
-      .filter(v => v != null)
-  )
-}
-
-const hasMeaningfulData = (field: string) => {
-  const series = getFieldSeries(field)
-
-  if (!series.length) return false
-  return series.some(v => typeof v === 'number' && v > 0)
-}
-
-const metricsAvailability = computed(() => ({
-  heartRate: hasMeaningfulData('heart_rate'),
-  power: hasMeaningfulData('power'),
-  cadence: hasMeaningfulData('cadence'),
-  speed: hasMeaningfulData('enhanced_speed'),
-  elevation: hasMeaningfulData('enhanced_altitude'),
-  distance: hasMeaningfulData('distance'),
-  position: hasMeaningfulData('position_lat'),
-  muscles: !!muscleData.value && Object.keys(muscleData.value).length > 0
-}))
+const metricsAvailability = computed(() => {
+  // Rely solely on server-provided availability metadata (hrmData is stored as an array)
+  return hrmData.value?.[0]?.metricsAvailability
+})
 
 </script>
 

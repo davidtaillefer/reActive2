@@ -100,5 +100,7 @@ def set_to_dict(s: Set):
         "reps": s.reps,
         "weight": s.weight,
         "duration": s.duration,
+        "exercise_category": s.exercise_category,
+        "subtype": s.subtype,
         "exercise_name": s.exercise_name
     }

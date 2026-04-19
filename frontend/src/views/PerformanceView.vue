@@ -8,7 +8,7 @@
                     <BCardBody class="d-flex flex-column">
                         <h5 class="mb-3">Muscle Fatigue</h5>
 
-                        <MuscleMap v-if="hasFatigue" :muscleData="{ load: performance.fatigue }" class="flex-grow-1" />
+                        <MuscleMap v-if="hasFatigue" :muscleData="{ load: performance.fatigue }" mode="fatigue" class="flex-grow-1" />
 
                         <div v-else class="text-center text-muted">
                             No muscle fatigue data available

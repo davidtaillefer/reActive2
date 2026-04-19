@@ -10,6 +10,7 @@ from ..parsers.fit_parser import parse_fit
 from ..parsers.tcx_parser import parse_tcx
 from ..processors.activity import finalize_activity
 from ..serializers import activity_to_dict
+from lib.metrics_availability import compute_metrics_availability
 from flask import Blueprint
 from garmin_fit_sdk import Decoder, Stream
 
@@ -124,5 +125,12 @@ def readhrm(hrmfile):
         return {"error": "Unsupported file type"}, 400
 
     activity.name = finalize_activity(activity)
-    
-    return activity_to_dict(activity)
+
+    d = activity_to_dict(activity)
+
+    # compute metrics availability from serialized track
+    track = d.get("track", []) or []
+
+    d["metricsAvailability"] = compute_metrics_availability(track, d.get("muscles"))
+
+    return d

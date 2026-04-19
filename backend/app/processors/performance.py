@@ -20,25 +20,23 @@ def compute_load_metrics(loads):
     if not loads:
         return 0, 0
 
-    # check most-recent row for precomputed ATL/CTL
-    last = loads[-1]
-    if isinstance(last, dict):
-        atl = last.get("atl") or last.get("ATL")
-        ctl = last.get("ctl") or last.get("CTL")
-        if atl is not None and ctl is not None:
-            return atl, ctl
-    else:
-        # tuple layout from service SELECT: date, strength_load, cardio_load, atl, ctl
-        if len(last) >= 5 and (last[3] is not None or last[4] is not None):
-            return last[3] or 0, last[4] or 0
+    # # check most-recent row for precomputed ATL/CTL
+    # last = loads[-1]
+    # if isinstance(last, dict):
+    #     atl = last.get("atl") or last.get("ATL")
+    #     ctl = last.get("ctl") or last.get("CTL")
+    #     if atl is not None and ctl is not None:
+    #         return atl, ctl
+    # else:
+    #     # tuple layout from service SELECT: date, strength_load, cardio_load, atl, ctl
+    #     if len(last) >= 5 and (last[3] is not None or last[4] is not None):
+    #         return last[3] or 0, last[4] or 0
 
     # fall back to computing from per-row load values
     values = []
     for l in loads:
         if isinstance(l, dict):
-            v = l.get("load") or l.get("training_load") or (
-                (l.get("strength_load") or 0) + (l.get("cardio_load") or 0)
-            )
+            v = l.get("training_load")
         else:
             # tuple: (date, strength_load, cardio_load, ...)
             strength = l[1] if len(l) > 1 and l[1] is not None else 0

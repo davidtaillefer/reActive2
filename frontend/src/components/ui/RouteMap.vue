@@ -1,7 +1,7 @@
 <template>
   <div class="map-wrapper">
     <div ref="mapContainer" class="map-container" :style="{ height }"></div>
-    <div class="map-legend">
+    <div v-if="showLegend" class="map-legend">
         <select v-model="colourMode">
           <option value="none">Solid</option>
           <option value="grade">Grade</option>
@@ -38,6 +38,7 @@ const available = ref({ hr: false, speed: false, power: false })
 const props = defineProps({
   hrmData: [Object, Array], // Support both single object or array
   height: { type: String, default: '100%' },
+  showLegend: { type: Boolean, default: true },
   hoveredPoint: { type: Object, default: null }
 });
 
@@ -179,7 +180,7 @@ const drawRoute = () => {
       .filter(p => p.position_lat != null && p.position_long != null)
 
     // detect available metrics for this track so selector can be enabled
-    detectAvailableMetrics(trackArray)
+    detectAvailableMetrics(trackArray, activity)
 
     // RouteMap: activity index and track lengths
 
@@ -363,7 +364,19 @@ const computeMetricBounds = (trackArray, metric) => {
   }
 }
 
-const detectAvailableMetrics = (trackArray) => {
+const detectAvailableMetrics = (trackArray, activity) => {
+  // Prefer server-provided metadata when available
+  const metrics = activity?.metricsAvailability || (Array.isArray(props.hrmData) ? (props.hrmData[0] && props.hrmData[0].metricsAvailability) : (props.hrmData && props.hrmData.metricsAvailability))
+  if (metrics && typeof metrics === 'object') {
+    available.value = {
+      hr: !!metrics.heartRate,
+      speed: !!metrics.speed,
+      power: !!metrics.power,
+    }
+    return
+  }
+
+  // Fallback: inspect track points
   const hr = trackArray.some(p => getMetricValue(p, 'hr') != null)
   const speed = trackArray.some(p => getMetricValue(p, 'speed') != null)
   const power = trackArray.some(p => getMetricValue(p, 'power') != null)

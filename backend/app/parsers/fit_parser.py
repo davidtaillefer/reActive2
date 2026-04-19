@@ -3,6 +3,7 @@ from datetime import datetime
 from collections import deque
 from app.services.muscle_service import compute_muscle_load, load_exercise_map, update_muscle_fatigue
 from garmin_fit_sdk import Decoder, Stream
+
 from ..models import Activity
 from ..parsers.common import (
     parse_lap,
@@ -106,10 +107,17 @@ def parse_fit(file_path) -> Activity:
     user_id = get_user_uuid()
     print("User id:", user_id)
     
-    exercise_map = load_exercise_map()
+    exercise_map, exercise_lookup = load_exercise_map()
+    
+    for s in activity.sets:
+        exercise_name = exercise_lookup.get((s.exercise_category, s.subtype), s.exercise_category)
+        print("fitparser exercise lookup: ", s.exercise_category, s.subtype, exercise_name)
+        s.exercise_name = exercise_name
+    
     muscle_loads = compute_muscle_load(activity.sets, exercise_map)
-    activity.muscles = {"load": muscle_loads,
-                        "fatigue": update_muscle_fatigue(user_id, muscle_loads)}
+    if muscle_loads:
+        activity.muscles = {"load": muscle_loads,
+                            "fatigue": update_muscle_fatigue(user_id, muscle_loads)}
 
     first_point = None
     last_point = None

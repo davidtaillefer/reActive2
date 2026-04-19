@@ -2,8 +2,6 @@ from datetime import date, timedelta
 from ..db import exdb
 from ..processors.performance import compute_load_metrics, compute_injury_risk, compute_recovery
 
-
-
 def get_training_load_history(user_id, days=60):
     conn = exdb.connect()
     cursor = conn.cursor()
@@ -13,15 +11,11 @@ def get_training_load_history(user_id, days=60):
     cursor.execute("""
     SELECT 
         date,
-        strength_load,
-        cardio_load,
-        atl,
-        ctl
-    FROM training_load
-    WHERE user_id=%s
-    AND date >= %s
+        training_load
+    FROM activities
+    WHERE date >= %s
     ORDER BY date
-""", (user_id, start_date))
+""", (start_date))
     rows = cursor.fetchall()
     cursor.close()
     conn.close()

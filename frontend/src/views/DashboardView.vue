@@ -9,13 +9,8 @@
         </h4>
         <div class="overflow-auto" style="max-height: calc(100vh - 150px)">
           <div class="d-flex flex-column gap-3">
-            <BCard 
-              v-for="workout in recentWorkouts" 
-              :key="workout.id" 
-              class="mb-3 shadow-sm border-0 workout-card"
-              @click="openWorkout(workout.id)"
-              style="cursor: pointer;"
-              >
+            <BCard v-for="workout in recentWorkouts" :key="workout.id" class="mb-3 shadow-sm border-0 workout-card"
+              @click="openWorkout(workout.id)" style="cursor: pointer;">
               <BCardBody>
                 <BCardTitle class="h6 fw-bold mb-1">{{ workout.name }}</BCardTitle>
                 <p class="text-muted small mb-3">{{ workout.date }}</p>
@@ -40,31 +35,31 @@
                   style="height: 150px; border-radius: 0.375rem; overflow: hidden; background-color: #e9ecef; position: relative">
 
                   <!-- 1. Check for both hrmData AND the presence of GPS points -->
-                  <RouteMap v-if="workout.hrmData && hasGpsData(workout.hrmData)" :hrmData="[workout.hrmData]"
-                    class="h-100 w-100" />
+                  <RouteMap v-if="workout.hrmData && workout.hrmData.metricsAvailability.position"
+                    :hrmData="[workout.hrmData]" :showLegend="false" class="h-100 w-100" />
+
+                  <!-- Muscle Map -->
+                  <MuscleMap v-else-if="workout.hrmData && workout.hrmData.metricsAvailability.muscles"
+                    :muscleData="workout.hrmData.muscles" :showLegend="false" class="flex-grow-1 shadow-sm" />
 
                   <!-- 2. Display a specific placeholder for non-GPS activities (e.g., Strength/Swimming) -->
                   <div v-else-if="workout.hrmData"
                     class="d-flex h-100 flex-column align-items-center justify-content-center text-muted">
-                    <i class="bi bi-pin-map-fill fs-3 mb-1"></i>
-                    <div style="font-size: 0.7rem;">No GPS Data for this Activity</div>
+                    <IBiPinMapFill />
+                    <p class="mb-0">
+                      {{ workout.hrmData.sport === 'training'
+                        ? 'No muscle data available.'
+                        : 'No route data available.' }}
+                    </p>
                   </div>
 
                   <!-- 3. Show loading spinner while fetching hrmData -->
                   <div v-else class="d-flex h-100 align-items-center justify-content-center">
                     <BSpinner small variant="secondary" />
                   </div>
-
-                  <!-- Coordinate label: only show if the summary coordinates are non-zero
-  <div v-if="workout.latitude !== 0" style="position: absolute; bottom: 8px; left: 8px; font-size: 0.7rem; color: #6c757d; z-index: 1000; background: rgba(255,255,255,0.7); padding: 2px 4px; border-radius: 3px;">
-    {{ workout.latitude.toFixed(4) }}, {{ workout.longitude.toFixed(4) }}
-  </div> -->
                 </div>
-
-
               </BCardBody>
             </BCard>
-
           </div>
         </div>
       </BCol>
@@ -90,8 +85,6 @@
               <MinHrCard />
             </BCol>
 
-
-
             <!-- VO2max -->
             <BCol cols="12" md="6">
               <VO2MaxCard />
@@ -109,7 +102,7 @@
               <BCard class="h-100">
                 <BCardBody>
                   <BCardTitle>
-                    <IBiMoonStarsFill/>
+                    <IBiMoonStarsFill />
                     Nightly Sleep Stages
                   </BCardTitle>
                   <div class="mb-3">
@@ -155,8 +148,6 @@
                 </BCardBody>
               </BCard>
             </BCol>
-
-
           </BRow>
         </div>
       </BCol>
@@ -279,16 +270,21 @@ const openWorkout = (id: number) => {
 }
 
 const hasGpsData = (hrmData: any) => {
-  // Access the Track object from your specific HRM data structure
-  const track = hrmData?.track;
-  if (!track) return false;
+  if (!hrmData) return false
 
-  // Check if any point in the track has valid position data
-  // Garmin track points for non-GPS activities usually omit these fields
+  // Prefer server-provided metadata when available
+  if (hrmData.metricsAvailability && typeof hrmData.metricsAvailability.position !== 'undefined') {
+    return !!hrmData.metricsAvailability.position
+  }
+
+  // Fallback: inspect track points
+  const track = hrmData?.track
+  if (!track) return false
+
   return Object.values(track).some((point: any) =>
     point.position_lat !== null && point.position_long !== null
-  );
-};
+  )
+}
 
 
 // VO2max data

@@ -339,6 +339,7 @@ const uploadFile = async (fileItem: any) => {
       if (res.ok) {
         const rawData = await res.json() || {};
         hrmData.value.push(rawData);
+        console.log("Act: ", rawData)
         // Fetched HRM data
         const newActivity = createActivityTemplate();
         newActivity.hrmfile = fileItem.name;

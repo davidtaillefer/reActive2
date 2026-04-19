@@ -1,13 +1,6 @@
 <template>
-  <MetricCard 
-    title="Speed" 
-    :value1="value1" 
-    unit1="km/h" 
-    :value2="value2"
-    unit2="max km/h"
-    icon="heart-fill" 
-    icon-color="text-danger"
-  >
+  <MetricCard title="Speed" :value1="value1" unit1="km/h" :value2="value2" unit2="max km/h" icon="heart-fill"
+    icon-color="text-danger">
     <Line :data="chartData" :options="chartOptions" ref="chartRef" />
   </MetricCard>
 </template>
@@ -47,17 +40,17 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  hrmData: {type: Array, required: true},
+  hrmData: { type: Array, required: true },
   hoveredPoint: { type: Object, default: null }
 });
-const emit = defineEmits(['point-hover','point-leave'])
+const emit = defineEmits(['point-hover', 'point-leave'])
 const chartRef = ref(null)
 const value1 = ref(props.activity?.avgspeed?.toFixed(1) || 'N/A');
-const value2 = ref(((props.hrmData?.[0]?.max_speed)*3.6).toFixed(1) || 'N/A');
+const value2 = ref(((props.hrmData?.[0]?.max_speed) * 3.6).toFixed(1) || 'N/A');
 
 const chartData = computed(() => {
-  const trackData = props.hrmData?.[0]?.track 
-    ? Object.values(props.hrmData[0].track) 
+  const trackData = props.hrmData?.[0]?.track
+    ? Object.values(props.hrmData[0].track)
     : [];
 
   const startTime = new Date(props.activity?.date).getTime();
@@ -69,7 +62,12 @@ const chartData = computed(() => {
     datasets: [
       {
         label: 'Speed',
-        data: trackData.map(d => d.enhanced_speed.toFixed(1)*3.6 || 0),
+        data: trackData.map(d => {
+          const speed = Number(d.enhanced_speed);
+          return Number.isFinite(speed)
+            ? Math.round(speed * 3.6 * 10) / 10
+            : 0;
+        }),
         borderColor: 'blue',
         backgroundColor: 'rgba(0, 0, 255, 0.1)',
         tension: 0.4,
@@ -84,8 +82,8 @@ const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   onHover: (evt, elements) => {
-    try{
-      if (elements && elements.length){
+    try {
+      if (elements && elements.length) {
         const el = elements[0]
         const idx = el.index
         const trackData = props.hrmData?.[0]?.track ? Object.values(props.hrmData[0].track) : []
@@ -94,7 +92,7 @@ const chartOptions = {
       } else {
         emit('point-leave')
       }
-    }catch(e){/* ignore */}
+    } catch (e) {/* ignore */ }
   },
   plugins: {
     legend: {
@@ -138,23 +136,23 @@ watch(() => props.hoveredPoint, (hp) => {
     chart = typeof chartComp.value.getChart === 'function' ? chartComp.value.getChart() : (chartComp.value.chart || chartComp.value.chartInstance || null)
   }
   if (!chart) return
-  if (!hp){
-    try{
+  if (!hp) {
+    try {
       chart.setActiveElements([])
-      chart.tooltip.setActiveElements([], { x:0, y:0 })
+      chart.tooltip.setActiveElements([], { x: 0, y: 0 })
       if (chart.options && chart.options.plugins && chart.options.plugins.verticalLine) {
         chart.options.plugins.verticalLine.show = false
       }
       chart.update()
-    }catch(e){}
+    } catch (e) { }
     return
   }
 
   const trackData = props.hrmData?.[0]?.track ? Object.values(props.hrmData[0].track) : []
   const match = findNearestPoint(trackData, hp, { toleranceMs: 1000 })
-  if (match){
+  if (match) {
     const idx = match.index
-    try{
+    try {
       chart.setActiveElements([{ datasetIndex: 0, index: idx }])
       chart.tooltip.setActiveElements([{ datasetIndex: 0, index: idx }], { x: 0, y: 0 })
       const meta = chart.getDatasetMeta(0)
@@ -163,10 +161,10 @@ watch(() => props.hoveredPoint, (hp) => {
       if (chart.options && chart.options.plugins) {
         chart.options.plugins.verticalLine = Object.assign({}, chart.options.plugins.verticalLine || {}, { show: true, x: px })
       }
-      try{ chart.update('none') }catch(e){ try{ chart.update() }catch(_){} }
-    }catch(e){}
+      try { chart.update('none') } catch (e) { try { chart.update() } catch (_) { } }
+    } catch (e) { }
   } else {
-    try{ chart.setActiveElements([]); chart.tooltip.setActiveElements([], { x:0, y:0 }); chart.update(); }catch(e){}
+    try { chart.setActiveElements([]); chart.tooltip.setActiveElements([], { x: 0, y: 0 }); chart.update(); } catch (e) { }
   }
 }, { immediate: false })
 

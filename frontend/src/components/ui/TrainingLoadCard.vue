@@ -1,37 +1,26 @@
 <template>
   <!-- Force values to strings to fix the Prop Type warning -->
-  <MetricCard 
-    title="Acute Training Load" 
-    :value1="currentATL.toString()" 
-    unit1="Current ATL" 
-    :value2="peakATL.toString()"
-    unit2="Peak ATL"
-    icon="i-bi-graph-up-arrow" 
-    icon-color="text-primary"
-  >
+  <MetricCard title="Acute Training Load" :value1="currentATL.toString()" unit1="Current ATL"
+    :value2="peakATL.toString()" unit2="Peak ATL" icon="i-bi-graph-up-arrow" icon-color="text-primary">
     <!-- Use a key to force chart refresh when data arrives -->
-    <Line 
-      v-if="chartData.datasets[0].data.length > 0"
-      :data="chartData" 
-      :options="chartOptions" 
-      :key="chartData.datasets[0].data.length"
-    />
+    <Line v-if="chartData.datasets[0].data.length > 0" :data="chartData" :options="chartOptions"
+      :key="chartData.datasets[0].data.length" />
   </MetricCard>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Line } from 'vue-chartjs'
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
-  Title, 
-  Tooltip, 
-  Legend, 
-  Filler 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
 } from 'chart.js'
 import MetricCard from './MetricCard.vue'
 
@@ -57,20 +46,20 @@ const daysInMonth = computed(() => {
 
 const atlData = computed(() => {
   const dailyLoads: Record<string, number> = {};
-  
+
   props.activities.forEach((act: any) => {
-  // Use the pre-normalized date from our new parent logic
-  const d = act.normalizedDate; 
-  dailyLoads[d] = (dailyLoads[d] || 0) + (parseFloat(act.training_load) || 0);
-});
+    // Use the pre-normalized date from our new parent logic
+    const d = act.normalizedDate;
+    dailyLoads[d] = (dailyLoads[d] || 0) + (parseFloat(act.training_load) || 0);
+  });
 
   // Start 30 days before current month
   const startDate = new Date(props.month.getFullYear(), props.month.getMonth(), 1);
   startDate.setDate(startDate.getDate() - 30);
-  
+
   let rollingATL = 0;
   const history: Record<string, number> = {};
-  
+
   // Calculate for 30 buffer days + days in current month
   const daysInView = new Date(props.month.getFullYear(), props.month.getMonth() + 1, 0).getDate();
   const totalDays = 30 + daysInView;
@@ -79,10 +68,10 @@ const atlData = computed(() => {
   for (let i = 0; i < totalDays; i++) {
     const dStr = tempDate.toISOString().split('T')[0]; // YYYY-MM-DD
     const load = dailyLoads[dStr] || 0;
-    
+
     rollingATL = (load * 1.025) + (0.836 * rollingATL);
     history[dStr] = Number(rollingATL.toFixed(1));
-    
+
     tempDate.setDate(tempDate.getDate() + 1);
   }
   return history;
@@ -91,15 +80,15 @@ const atlData = computed(() => {
 const chartPoints = computed(() => daysInMonth.value.map(day => atlData.value[day] || 0))
 const currentATL = computed(() => {
   const now = new Date();
-  const isCurrentMonth = props.month.getMonth() === now.getMonth() && 
-                         props.month.getFullYear() === now.getFullYear();
+  const isCurrentMonth = props.month.getMonth() === now.getMonth() &&
+    props.month.getFullYear() === now.getFullYear();
 
   if (isCurrentMonth) {
     const todayStr = now.toISOString().split('T')[0];
     // Return today's calculated value, or the last available if today isn't calculated yet
     return atlData.value[todayStr] || chartPoints.value[now.getDate() - 1] || 0;
   }
-  
+
   // Default behaviour for previous months: return the final day's value
   return chartPoints.value[chartPoints.value.length - 1] || 0;
 });

@@ -80,6 +80,8 @@ class Set:
     reps: Optional[int] = None
     weight: Optional[float] = None
     duration: Optional[float] = None
+    exercise_category: Optional[str] = None
+    subtype: Optional[int] = None
     exercise_name: Optional[str] = None
 
 @dataclass

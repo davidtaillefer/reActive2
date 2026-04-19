@@ -113,7 +113,8 @@ def parse_set(msg) -> Optional[Set]:
             reps=msg.get("repetitions"),
             weight=msg.get("weight"),
             duration=msg.get("duration"),
-            exercise_name=msg.get("category")[0],
+            exercise_category=msg.get("category")[0],
+            subtype=msg.get("category_subtype")[0]
         )
     except Exception as e:
         print("Set parse error:", e)

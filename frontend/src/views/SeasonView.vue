@@ -57,7 +57,7 @@
             <!-- Right Side - Map -->
             <BCol cols="12" md="8" lg="9" class="d-flex flex-column">
               <BCardBody class="p-0 position-relative flex-fill d-flex flex-column">
-                <RouteMap v-if="hrmData" :key="mapKey" :hrmData="hrmData"
+                <RouteMap v-if="hrmData" :key="mapKey" :hrmData="hrmData" :showLegend="false"
                   style="height: 100%; width: 100%; min-height: 400px;" class="flex-fill" />
               </BCardBody>
             </BCol>

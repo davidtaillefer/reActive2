@@ -5,6 +5,7 @@
         <thead class="table-light">
           <tr>
             <th>Set</th>
+            <th>Category</th>
             <th>Exercise</th>
             <th>Reps</th>
             <th>Weight</th>
@@ -14,6 +15,7 @@
         <tbody>
           <tr v-for="(set, index) in sets" :key="index">
             <td>{{ index + 1 }}</td>
+            <td class="text-capitalize">{{ set.exercise_category || 'Strength' }}</td>
             <td class="text-capitalize">{{ set.exercise_name || 'Strength' }}</td>
             <td>{{ set.reps || 0 }}</td>
             <td>{{ set.weight || 0 }} kg</td>

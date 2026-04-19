@@ -7,6 +7,9 @@ from datetime import datetime, timezone
 from ..db import exdb
 from ..utils.user_utils import get_user_uuid
 
+# cache variables (module-level)
+_cached_muscle_map = None
+_cached_lookup_map = None
 
 BODYWEIGHT_FACTORS = {
     "push_up": 0.65,
@@ -26,7 +29,7 @@ def estimate_bodyweight_load(exercise_name, reps, duration, user_weight):
     factor = BODYWEIGHT_FACTORS.get(name, 0.5)  # fallback
 
     # Static holds (plank etc.)
-    if duration:
+    if name == "plank":
         return duration * factor * user_weight * 0.1
 
     if reps:
@@ -52,41 +55,133 @@ def compute_set_load(set_data, user_weight=None):
     return 0
 
 
-def load_exercise_map():
+def load_exercise_map(): #add force_refresh=False
+    
+    # global _cached_muscle_map, _cached_lookup_map
+
+    # if not force_refresh and _cached_muscle_map and _cached_lookup_map:
+    #     return _cached_muscle_map, _cached_lookup_map
+    
     conn = exdb.connect()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
+    # --------------------------------------------------
+    # 1. BASE MAP (exercise_categories)
+    # --------------------------------------------------
     cursor.execute("""
-        SELECT e.name AS exercise, m.name AS muscle, em.role
-        FROM exercise_muscles em
-        JOIN exercises e ON em.exercise_id = e.id
-        JOIN muscle_groups m ON em.muscle_id = m.id
+        SELECT 
+            ec.name AS exercise,
+            mg.name AS muscle,
+            ecm.role
+        FROM exercise_category_muscles ecm
+        JOIN exercise_categories ec 
+            ON ecm.exercise_category_id = ec.id
+        JOIN muscle_groups mg 
+            ON ecm.muscle_id = mg.id
     """)
+    category_rows = cursor.fetchall()
 
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    base_map = defaultdict(list)
 
-    exercise_map = defaultdict(list)
-
-    for r in rows:
-        exercise_map[r["exercise"].lower()].append({
+    for r in category_rows:
+        base_map[r["exercise"].lower()].append({
             "muscle": r["muscle"],
             "role": r["role"]
         })
-    print(f"Loaded exercise map with {len(exercise_map)} exercises: {json.dumps(exercise_map)}")
-    return dict(exercise_map)
+
+    # --------------------------------------------------
+    # 2. SPECIFIC MAP (exercise-level exceptions)
+    # --------------------------------------------------
+    cursor.execute("""
+        SELECT 
+            e.name AS exercise,
+            mg.name AS muscle,
+            em.role
+        FROM exercise_muscles em
+        JOIN exercises e 
+            ON em.exercise_id = e.id
+        JOIN muscle_groups mg 
+            ON em.muscle_id = mg.id
+    """)
+    exercise_rows = cursor.fetchall()
+
+    specific_map = defaultdict(list)
+
+    for r in exercise_rows:
+        specific_map[r["exercise"].lower()].append({
+            "muscle": r["muscle"],
+            "role": r["role"]
+        })
+
+    # --------------------------------------------------
+    # 3. EXERCISE LOOKUP MAP (KEY ADDITION)
+    # --------------------------------------------------
+    cursor.execute("""
+        SELECT 
+            e.name AS exercise,
+            e.garmin_exercise_id AS subtype,
+            ec.name AS category
+        FROM exercises e
+        JOIN exercise_categories ec
+            ON e.category_id = ec.id
+        WHERE e.garmin_exercise_id IS NOT NULL
+    """)
+    lookup_rows = cursor.fetchall()
+
+    exercise_lookup = {}
+
+    for r in lookup_rows:
+        key = (r["category"].lower(), int(r["subtype"]))
+        exercise_lookup[key] = r["exercise"].lower()
+
+    cursor.close()
+    conn.close()
+
+    # --------------------------------------------------
+    # 4. MERGE MUSCLE MAPS (unchanged)
+    # --------------------------------------------------
+    final_map = dict(base_map)
+
+    for exercise, muscles in specific_map.items():
+        final_map[exercise] = muscles
+
+    # --------------------------------------------------
+    # DEBUG PRINTS
+    # --------------------------------------------------
+    print("\n=== MUSCLE MAP ===\n")
+    for exercise in sorted(final_map.keys()):
+        print(f"{exercise}:")
+        for m in final_map[exercise]:
+            print(f"  - {m['muscle']} ({m.get('role','unknown')})")
+        print()
+
+    print(f"Total entries: {len(final_map)}\n")
+
+    print("\n=== LOOKUP MAP (category + subtype → exercise) ===\n")
+    for k, v in list(exercise_lookup.items())[:20]:
+        print(f"{k} → {v}")
+
+    print(f"Total lookup entries: {len(exercise_lookup)}\n")
+    
+    # _cached_muscle_map = final_map
+    # _cached_lookup_map = exercise_lookup
+
+    return final_map, exercise_lookup
 
 def compute_muscle_load(sets, exercise_map):
     muscle_load = {}
 
     for s in sets:
         raw_name = s.exercise_name or ""
+        raw_category = s.exercise_category or ""
         match = match_exercise(raw_name, exercise_map)
-
+        
         if not match:
-            print("No match found for exercise:", raw_name)
-            continue
+            match = match_exercise(raw_category, exercise_map)
+
+            if not match:
+                print("No match found for exercise:", raw_category)
+                continue
         
         user_weight = 82
 
@@ -127,17 +222,16 @@ def match_exercise(name, exercise_map):
 
     return matches[0] if matches else None
 
-def get_muscle_activation(exercise_names):
-    query = """
-        SELECT m.name, em.role
-        FROM exercises e
-        JOIN exercise_muscles em ON e.id = em.exercise_id
-        JOIN muscles m ON m.id = em.muscle_id
-        WHERE e.name IN %s
-    """
+# def get_muscle_activation(exercise_names):
+#     query = """
+#         SELECT m.name, em.role
+#         FROM exercises e
+#         JOIN exercise_muscles em ON e.id = em.exercise_id
+#         JOIN muscles m ON m.id = em.muscle_id
+#         WHERE e.name IN %s
+#     """
     
 DECAY_RATE = 0.85  # daily recovery
-
 
 def apply_decay(fatigue, days=1):
     return fatigue * (DECAY_RATE ** days)
