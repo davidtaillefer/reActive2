@@ -213,11 +213,8 @@ const props = defineProps({
 const safeData = computed(() => props.muscleData || {})
 
 const view = ref('front')
-console.log('VIEW:', view.value)
-console.log('muscleData:', safeData.value)
 
 const getValue = (muscle) => {
-    console.log("Mode: ", props.mode)
     if (props.mode === 'fatigue') {
         return props.muscleData?.load?.[muscle] || 0
     }
@@ -366,7 +363,7 @@ svg {
 
     /* ✅ Default: side-by-side */
     flex-direction: row;
-    
+
 }
 
 .muscle-map-svg {

@@ -11,7 +11,9 @@
       <BCollapse id="nav-collapse" is-nav>
         <BNavbarNav class="align-items-center">
           <BNavItem to="/dashboard" tag="router-link">Dashboard</BNavItem>
-          <BNavItem to="/" tag="router-link">Calendar</BNavItem>
+          <BNavItem :to="{ name: 'Calendar', query: route.query }" tag="router-link">
+            Calendar
+          </BNavItem>
           <BNavItem to="/performance" tag="router-link">Condition</BNavItem>
           <BNavItem to="/map" tag="router-link">Map</BNavItem>
           <BNavItem to="/season" tag="router-link">Season</BNavItem>
@@ -43,6 +45,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const isSyncing = ref(false)

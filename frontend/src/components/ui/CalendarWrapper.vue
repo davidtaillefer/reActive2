@@ -12,8 +12,10 @@
         </div>
       </BCol>
       <BCol cols="12" lg="4" class="d-flex flex-column overflow-auto gap-3">
-        <TrainingLoadCard :activities="activities2" :month="currentCalendarDate" />
-        <WeeklyTrainingCard :activities="activities2" :month="currentCalendarDate" :sportNames="sportNames"
+        <TrainingLoadCard v-if="!isLoadingActivities && activities2.length" :key="currentCalendarDate.toISOString()" :activities="activities2"
+          :month="currentCalendarDate" />
+        <WeeklyTrainingCard v-if="!isLoadingActivities && activities2.length" :key="activities2.length"
+          :activities="activities2" :month="currentCalendarDate" :sportNames="sportNames"
           :sportColours="sportColours" />
         <TrainingStatusCard />
       </BCol>
@@ -30,29 +32,43 @@ import bootstrapPlugin from '@fullcalendar/bootstrap'
 import TrainingLoadCard from '@/components/ui/TrainingLoadCard.vue'
 import WeeklyTrainingCard from '@/components/ui/WeeklyTrainingCard.vue'
 import TrainingStatusCard from '@/components/ui/TrainingStatusCard.vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { BContainer, BRow, BCol } from 'bootstrap-vue-next'
 
 // --- State Management ---
 const router = useRouter()
+const route = useRoute()
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
 const activities2 = ref([])
 const calendarEvents = ref([]); // Create a separate ref for events
 // Try to restore previously-selected calendar month from localStorage
-const STORAGE_KEY = 'calendar.currentDate'
-const loadSavedDate = () => {
-  try {
-    const v = localStorage.getItem(STORAGE_KEY)
-    if (v) {
-      // v expected as 'YYYY-MM-DD' or full ISO; Date can parse both
-      const d = new Date(v)
-      if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), 1)
-    }
-  } catch (e) {}
-  return new Date()
+
+const getMonthFromRoute = () => {
+  const m = route.query.month as string
+
+  if (!m) {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), 1)
+  }
+
+  const [year, month] = m.split('-').map(Number)
+
+  if (!year || !month) {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), 1)
+  }
+
+  return new Date(year, month - 1, 1)
 }
-const currentCalendarDate = ref(loadSavedDate())
+
+const toMonthString = (date: Date) => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}`
+}
+
+const currentCalendarDate = ref(getMonthFromRoute())
 const calendarRef = ref(null)
 const programmaticNavigation = ref(false)
 const sportsLoaded = ref(false)
@@ -101,76 +117,95 @@ const loadSports = async () => {
   }
 }
 
+const isLoadingActivities = ref(false)
+
 // --- Logic: Fetch Activities (Current Month + 30 Day Buffer) ---
 const fetchActivities = async (start, end) => {
-  // 1. Identify the focal month for the TrainingLoadCard
-  const mid = new Date(start.getTime() + (end.getTime() - start.getTime()) / 2)
-  currentCalendarDate.value = new Date(mid.getFullYear(), mid.getMonth(), 1)
-  try { localStorage.setItem(STORAGE_KEY, currentCalendarDate.value.toISOString().split('T')[0]) } catch(e){}
-
-  // 2. Create the 30-day "Buffer" for ATL calculation
-  const bufferStart = new Date(start)
-  bufferStart.setDate(bufferStart.getDate() - 30)
-
-  const startStr = bufferStart.toISOString().split('T')[0]
-  const endStr = end.toISOString().split('T')[0]
+  isLoadingActivities.value = true
 
   try {
-    const res = await fetch(`${apiBaseUrl}activities?start=${startStr}&end=${endStr}`);
-    const allActivities = await res.json();
+    const bufferStart = new Date(start)
+    bufferStart.setDate(bufferStart.getDate() - 30)
 
-    // 1. Update activities2 for the ATL Card
-    // We normalize the dates here so the ATL card doesn't have to
-    activities2.value = allActivities.map(a => ({
+    const startStr = toLocalDateString(bufferStart)
+    const endStr = toLocalDateString(end)
+
+    const res = await fetch(`${apiBaseUrl}activities?start=${startStr}&end=${endStr}`)
+    const allActivities = await res.json()
+
+    // ✅ Build data FIRST (no partial updates)
+    const newActivities = allActivities.map(a => ({
       ...a,
       normalizedDate: formatToISO(a.date)
-    }));
+    }))
 
-    // 2. Update Calendar Events
-    const calendarStartStr = start.toISOString().split('T')[0];
-    calendarEvents.value = allActivities
-      .filter((a: any) => {
-        const isoDate = new Date(a.date).toISOString().split('T')[0];
-        return isoDate >= start.toISOString().split('T')[0];
-      })
-      .map((a: any) => {
-        // Standardize to YYYY-MM-DD
-        const cleanDate = new Date(a.date).toISOString().split('T')[0];
-        const iconName = sportIcons.value[a.sport] || '';
-        const iconUrl = iconName ? `/icons/${iconName}` : '';
+    const newEvents = allActivities.map((a) => {
+      const cleanDate = formatToISO(a.date)
+      const iconName = sportIcons.value[a.sport] || ''
+      const iconUrl = iconName ? `/icons/${iconName}` : ''
 
-        return {
-          title: a.name || 'Activity',
-          start: cleanDate, // Must be exactly 'YYYY-MM-DD'
-          allDay: true,
-          extendedProps: { iconUrl, activity: a }
-        };
-      });
+      return {
+        title: a.name || 'Activity',
+        start: cleanDate,
+        allDay: true,
+        extendedProps: { iconUrl, activity: a }
+      }
+    })
+
+    // ✅ Single atomic update
+    activities2.value = newActivities
+    calendarEvents.value = newEvents
 
   } catch (err) {
-    console.error('Failed to load activities', err);
+    console.error('Failed to load activities', err)
+  } finally {
+    isLoadingActivities.value = false
   }
-};
+}
+
+const isInitialLoad = ref(true)
 
 // --- Calendar Event Handlers ---
 const handleDatesSet = async (arg) => {
-  // Ignore datesSet events triggered by our own programmatic navigation
   if (programmaticNavigation.value) return;
-  if (!sportsLoaded.value) {
-    pendingRange.value = { start: arg.start, end: arg.end };
-    return;
+
+  const api = calendarRef.value?.getApi?.()
+  if (!api) return
+
+  const current = api.getDate()
+  currentCalendarDate.value = new Date(
+    current.getFullYear(),
+    current.getMonth(),
+    1
+  )
+  const monthStr = toMonthString(current)
+
+  // ✅ Only update router if needed
+  if (route.query.month !== monthStr) {
+    router.replace({
+      query: {
+        ...route.query,
+        month: monthStr
+      }
+    })
   }
-  // Persist the current visible range's focal month so returning to calendar restores it
-  try { localStorage.setItem(STORAGE_KEY, new Date(arg.start).toISOString().split('T')[0]) } catch(e){}
-  await fetchActivities(arg.start, arg.end);
-};
+
+  if (!sportsLoaded.value) {
+    pendingRange.value = { start: arg.start, end: arg.end }
+    return
+  }
+
+  await fetchActivities(arg.start, arg.end)
+}
 
 const handleEventClick = (clickInfo: any) => {
   const activity = clickInfo.event.extendedProps.activity
+
   if (activity) {
     router.push({
       name: 'activity',
       params: { id: activity.id },
+      query: route.query
     })
   }
 }
@@ -191,7 +226,7 @@ const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin, bootstrapPlugin],
   themeSystem: 'bootstrap',
   // Ensure FullCalendar starts at the persisted month (or today's month)
-  initialDate: currentCalendarDate.value.toISOString().split('T')[0],
+  initialDate: getMonthFromRoute(),
   initialView: 'dayGridMonth',
   showNonCurrentDates: false,
   fixedWeekCount: false,
@@ -218,29 +253,28 @@ onMounted(() => {
 // when `currentCalendarDate` changes or once on mount.
 onMounted(async () => {
   await nextTick()
-  try {
-    if (calendarRef.value && typeof calendarRef.value.getApi === 'function') {
-      programmaticNavigation.value = true
-      calendarRef.value.getApi().gotoDate(currentCalendarDate.value)
-      // clear flag after a tick so any datesSet handler knows this was programmatic
-      await nextTick()
-      programmaticNavigation.value = false
-    }
-  } catch (e) {
-    programmaticNavigation.value = false
-  }
+
+  const api = calendarRef.value?.getApi?.()
+  if (!api) return
+
+  const routeDate = getMonthFromRoute()
+  const currentMonth = computed(() => getMonthFromRoute())
+
+  console.log("ROUTE MONTH:", route.query.month)
+  console.log("SETTING CALENDAR TO:", routeDate)
+
+  programmaticNavigation.value = true
+  api.gotoDate(routeDate)
+  await nextTick()
+  programmaticNavigation.value = false
 })
 
-watch(currentCalendarDate, async (d) => {
-  try {
-    if (calendarRef.value && typeof calendarRef.value.getApi === 'function') {
-      programmaticNavigation.value = true
-      calendarRef.value.getApi().gotoDate(d)
-      await nextTick()
-      programmaticNavigation.value = false
-    }
-  } catch (e) { programmaticNavigation.value = false }
-})
+const toLocalDateString = (date: Date) => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
 
 const formatToISO = (dateStr: string) => {
   if (!dateStr) return '';

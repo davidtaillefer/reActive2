@@ -2,7 +2,7 @@
 
 A self hosted fitness tracking and visualization app that reads **FIT, TCX (and future GPX)** files and transforms them into a **unified, normalized data model** for analysis and visualization.
 
-This app was begun may years ago as I was unhappy with the original desktop Garmin app that came with my Forerunner 305 (ie. there was no Linux version available). Over the years I tried a few desktop alternatives, and about 2015 I built my own using php for the api and javasctipt and Backbone for the browser-based user interface. I evenually migrated the backend to a python/Flask architecture. Recently, I had some changes I wanted to make and decided to move away from Backbone, settling on Vue 3.
+I began working on this app years ago as I was unhappy with the original desktop Garmin app that came with my Forerunner 305 (ie. there was no Linux version available). Over the years I tried a few desktop alternatives, and about 2015 I built my own using php for the api and javasctipt and Backbone for the browser-based user interface. I evenually migrated the backend to a python/Flask architecture. Recently, I had some changes I wanted to make and decided to move away from Backbone, settling on Vue 3.
 
 The app was originally meant to move away from storing personal fitness data on Garmin's cloud service. It can still do so, but I have recently implemented reading of data from the Garmin api as well.
 
